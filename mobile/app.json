@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Tesla Companion",
+    "slug": "tesla-companion",
+    "scheme": "teslacompanion",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#111111"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourcompany.teslacompanion",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Utilisée pour afficher la position de votre véhicule et calculer vos statistiques de trajet."
+      }
+    },
+    "android": {
+      "package": "com.yourcompany.teslacompanion",
+      "adaptiveIcon": {
+        "backgroundColor": "#111111"
+      }
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "extra": {
+      "apiBaseUrl": "https://api.your-domain.com"
+    }
+  }
+}
