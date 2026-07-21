@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { isAxiosError } from "axios";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
 import { env } from "../config/env";
@@ -67,7 +68,18 @@ export async function authRoutes(app: FastifyInstance) {
         "<html><body><p>Connexion Tesla réussie, tu peux revenir à l'application.</p></body></html>"
       );
     } catch (error) {
-      failAuthSession(state, error instanceof Error ? error.message : "unknown_error");
+      // Le message d'erreur générique d'axios ("Request failed with status
+      // code 400") ne dit rien d'utile : le détail exact renvoyé par Tesla
+      // (invalid_grant, invalid_client...) est dans error.response.data.
+      const teslaError = isAxiosError(error) ? error.response?.data : undefined;
+      request.log.error({ err: error, teslaError }, "Tesla token exchange failed");
+
+      const message = teslaError
+        ? JSON.stringify(teslaError)
+        : error instanceof Error
+          ? error.message
+          : "unknown_error";
+      failAuthSession(state, message);
       reply.code(502).type("text/html").send(
         "<html><body><p>La connexion Tesla a échoué. Retourne à l'application et réessaie.</p></body></html>"
       );
