@@ -86,6 +86,13 @@ sur Android sans limitation. Le compte Apple Developer (99 $/an) ne devient obli
 - distribuer via TestFlight,
 - publier sur l'App Store.
 
+⚠️ **Tesla n'accepte que des `redirect_uri` HTTPS pré-enregistrées** dans le Developer Portal — pas
+de schéma personnalisé (`teslacompanion://`) ni d'URL `exp://` dynamique générée par Expo Go. L'app
+utilise donc une URL fixe de ton backend (`EXPO_PUBLIC_TESLA_REDIRECT_URI`), qui doit être
+**identique, caractère pour caractère**, à `TESLA_REDIRECT_URI` côté backend et à l'URI enregistrée
+chez Tesla. `expo-web-browser` détecte la navigation vers cette URL et referme automatiquement la
+session d'authentification dans l'app.
+
 ### 4. RevenueCat
 
 1. Crée un projet sur [app.revenuecat.com](https://app.revenuecat.com), ajoute une app iOS et

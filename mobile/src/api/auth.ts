@@ -9,14 +9,8 @@ interface ExchangeResponse {
  * Échange le code d'autorisation OAuth Tesla (obtenu via le navigateur système)
  * contre une session applicative. Le backend garde les tokens Tesla, jamais l'app.
  */
-export async function exchangeTeslaAuthCode(
-  code: string,
-  redirectUri: string
-): Promise<ExchangeResponse> {
-  const { data } = await apiClient.post<ExchangeResponse>("/auth/tesla/exchange", {
-    code,
-    redirectUri,
-  });
+export async function exchangeTeslaAuthCode(code: string): Promise<ExchangeResponse> {
+  const { data } = await apiClient.post<ExchangeResponse>("/auth/tesla/exchange", { code });
   await setSessionToken(data.sessionToken);
   return data;
 }
