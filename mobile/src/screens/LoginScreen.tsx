@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, Alert, Button, StyleSheet, Text, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { exchangeTeslaAuthCode, getTeslaAuthorizeUrl } from "@/api/auth";
+import { getTeslaAuthorizeUrl, pollTeslaSession } from "@/api/auth";
 import { useAuth } from "@/auth/AuthContext";
 
 export function LoginScreen() {
@@ -13,20 +13,23 @@ export function LoginScreen() {
     try {
       // Tesla n'accepte que des redirect_uri HTTPS enregistrées à l'avance
       // dans le Developer Portal (pas de schéma custom type teslacompanion://
-      // ni d'URL exp:// dynamique d'Expo Go) : on utilise donc une URL fixe
-      // de notre backend, identique à celle configurée côté serveur et chez
-      // Tesla. expo-web-browser détecte la navigation vers cette URL et
-      // referme la session d'auth automatiquement.
+      // ni d'URL exp:// dynamique d'Expo Go). La page statique qui reçoit la
+      // redirection (GitHub Pages) transmet le code au backend elle-même —
+      // expo-web-browser n'intercepte pas cette redirection de façon fiable,
+      // donc on ne dépend pas de son résultat : dès que le navigateur se
+      // ferme (peu importe comment), on interroge le backend avec `state`
+      // jusqu'à ce que l'échange soit terminé.
       const redirectUri = process.env.EXPO_PUBLIC_TESLA_REDIRECT_URI ?? "";
-      const authUrl = getTeslaAuthorizeUrl(redirectUri);
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const state = Math.random().toString(36).slice(2);
+      const authUrl = getTeslaAuthorizeUrl(redirectUri, state);
 
-      if (result.type === "success" && result.url) {
-        const code = new URL(result.url).searchParams.get("code");
-        if (!code) throw new Error("Code d'autorisation manquant");
-        await exchangeTeslaAuthCode(code);
-        await refresh();
+      await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+
+      const session = await pollTeslaSession(state);
+      if (!session) {
+        throw new Error("La connexion a expiré, réessaie.");
       }
+      await refresh();
     } catch (error) {
       Alert.alert("Connexion impossible", (error as Error).message);
     } finally {
