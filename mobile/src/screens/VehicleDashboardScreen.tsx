@@ -1,23 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { getVehicleData, listVehicles, sendVehicleCommand } from "@/api/vehicles";
-import type { Vehicle, VehicleData } from "@/types/vehicle";
-import { CommandButton } from "@/screens/components/CommandButton";
+import type { Vehicle, VehicleData, VehicleCommand } from "@/types/vehicle";
 import { usePurchases } from "@/purchases/RevenueCatProvider";
+import { BatteryGauge } from "@/components/ui/BatteryGauge";
+import { Card } from "@/components/ui/Card";
+import { IconActionButton } from "@/components/ui/IconActionButton";
+import { StatTile } from "@/components/ui/StatTile";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 export function VehicleDashboardScreen() {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [data, setData] = useState<VehicleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
+  const [pendingCommand, setPendingCommand] = useState<VehicleCommand | null>(null);
   const { isPremium } = usePurchases();
 
   const load = useCallback(async () => {
@@ -28,7 +25,7 @@ export function VehicleDashboardScreen() {
       if (first) {
         setData(await getVehicleData(first.id));
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Erreur", "Impossible de récupérer les données du véhicule.");
     } finally {
       setIsLoading(false);
@@ -39,13 +36,10 @@ export function VehicleDashboardScreen() {
     load();
   }, [load]);
 
-  const runCommand = async (command: Parameters<typeof sendVehicleCommand>[1]) => {
+  const runCommand = async (command: VehicleCommand) => {
     if (!vehicle) return;
     if (!isPremium && command !== "flash_lights") {
-      Alert.alert(
-        "Fonctionnalité premium",
-        "Le contrôle à distance nécessite un abonnement actif."
-      );
+      Alert.alert("Fonctionnalité premium", "Le contrôle à distance nécessite un abonnement actif.");
       return;
     }
     setPendingCommand(command);
@@ -62,7 +56,7 @@ export function VehicleDashboardScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.textPrimary} />
       </View>
     );
   }
@@ -70,45 +64,78 @@ export function VehicleDashboardScreen() {
   if (!vehicle || !data) {
     return (
       <View style={styles.center}>
-        <Text>Aucun véhicule associé à ce compte.</Text>
+        <Text style={styles.emptyText}>Aucun véhicule associé à ce compte.</Text>
       </View>
     );
   }
 
+  const isCharging = data.chargingState === "Charging";
+
   return (
     <ScrollView
+      style={styles.screen}
       contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={load} />}
+      refreshControl={<RefreshControl tintColor={colors.textSecondary} refreshing={isLoading} onRefresh={load} />}
     >
-      <Text style={styles.title}>{vehicle.displayName}</Text>
-      <Text style={styles.state}>{vehicle.state === "online" ? "En ligne" : "Hors ligne"}</Text>
-
-      <View style={styles.statsRow}>
-        <Stat label="Batterie" value={`${data.batteryLevel}%`} />
-        <Stat label="Autonomie" value={`${Math.round(data.batteryRange)} km`} />
-        <Stat label="Odomètre" value={`${Math.round(data.odometerKm)} km`} />
+      <View style={styles.header}>
+        <Text style={styles.vehicleName}>{vehicle.displayName}</Text>
+        <StatusPill
+          label={vehicle.state === "online" ? "En ligne" : "Hors ligne"}
+          tone={vehicle.state === "online" ? "success" : "neutral"}
+        />
       </View>
 
-      <View style={styles.commands}>
-        <CommandButton
+      <Card>
+        <BatteryGauge percent={data.batteryLevel} rangeKm={data.batteryRange} />
+        {isCharging && (
+          <View style={styles.chargingRow}>
+            <StatusPill label="En charge" tone="success" />
+          </View>
+        )}
+      </Card>
+
+      <Card style={styles.statsCard}>
+        <StatTile icon="speedometer-outline" label="Odomètre" value={`${Math.round(data.odometerKm)} km`} />
+        <StatTile
+          icon="thermometer-outline"
+          label="Intérieur"
+          value={data.insideTempC !== null ? `${Math.round(data.insideTempC)}°` : "—"}
+        />
+        <StatTile
+          icon="lock-closed-outline"
+          label="Verrouillage"
+          value={data.isLocked ? "Verrouillé" : "Ouvert"}
+        />
+      </Card>
+
+      <View style={styles.actionsGrid}>
+        <IconActionButton
+          icon={data.isLocked ? "lock-open-outline" : "lock-closed-outline"}
           label={data.isLocked ? "Déverrouiller" : "Verrouiller"}
+          active={!data.isLocked}
           busy={pendingCommand === "door_unlock" || pendingCommand === "door_lock"}
+          locked={!isPremium}
           onPress={() => runCommand(data.isLocked ? "door_unlock" : "door_lock")}
         />
-        <CommandButton
-          label={data.isClimateOn ? "Arrêter la climatisation" : "Démarrer la climatisation"}
+        <IconActionButton
+          icon="snow-outline"
+          label="Climatisation"
+          active={data.isClimateOn}
           busy={pendingCommand === "climate_on" || pendingCommand === "climate_off"}
+          locked={!isPremium}
           onPress={() => runCommand(data.isClimateOn ? "climate_off" : "climate_on")}
         />
-        <CommandButton
-          label={data.chargingState === "Charging" ? "Arrêter la charge" : "Démarrer la charge"}
+        <IconActionButton
+          icon="flash-outline"
+          label="Charge"
+          active={isCharging}
           busy={pendingCommand === "charge_start" || pendingCommand === "charge_stop"}
-          onPress={() =>
-            runCommand(data.chargingState === "Charging" ? "charge_stop" : "charge_start")
-          }
+          locked={!isPremium}
+          onPress={() => runCommand(isCharging ? "charge_stop" : "charge_start")}
         />
-        <CommandButton
-          label="Faire clignoter les phares"
+        <IconActionButton
+          icon="sunny-outline"
+          label="Phares"
           busy={pendingCommand === "flash_lights"}
           onPress={() => runCommand("flash_lights")}
         />
@@ -117,23 +144,14 @@ export function VehicleDashboardScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { padding: 20, gap: 20 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "700" },
-  state: { color: "#777" },
-  statsRow: { flexDirection: "row", justifyContent: "space-between" },
-  stat: { alignItems: "center" },
-  statValue: { fontSize: 20, fontWeight: "600" },
-  statLabel: { color: "#777", fontSize: 12 },
-  commands: { gap: 12 },
+  screen: { flex: 1, backgroundColor: colors.background },
+  container: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing.xxxl },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
+  emptyText: { color: colors.textSecondary, ...typography.body },
+  header: { gap: spacing.sm },
+  vehicleName: { color: colors.textPrimary, ...typography.title },
+  chargingRow: { marginTop: spacing.lg },
+  statsCard: { flexDirection: "row" },
+  actionsGrid: { flexDirection: "row", gap: spacing.md, marginTop: spacing.sm },
 });

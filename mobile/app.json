@@ -6,22 +6,25 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
     "splash": {
-      "backgroundColor": "#111111"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.yourcompany.teslacompanion",
+      "userInterfaceStyle": "dark",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Utilisée pour afficher la position de votre véhicule et calculer vos statistiques de trajet."
       }
     },
     "android": {
       "package": "com.yourcompany.teslacompanion",
+      "userInterfaceStyle": "dark",
       "adaptiveIcon": {
-        "backgroundColor": "#111111"
+        "backgroundColor": "#000000"
       }
     },
     "plugins": ["expo-router", "expo-secure-store"],

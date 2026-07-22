@@ -3,6 +3,7 @@ import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/auth/AuthContext";
 import { RevenueCatProvider } from "@/purchases/RevenueCatProvider";
+import { colors } from "@/theme/tokens";
 
 function RootNavigation() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,10 +21,25 @@ function RootNavigation() {
   }, [isAuthenticated, isLoading, segments]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
       <Stack.Screen name="login" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="paywall" options={{ presentation: "modal", headerShown: true }} />
+      <Stack.Screen
+        name="paywall"
+        options={{
+          presentation: "modal",
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.background },
+          headerTitleStyle: { color: colors.textPrimary },
+          headerShadowVisible: false,
+          title: "",
+        }}
+      />
     </Stack>
   );
 }
@@ -32,7 +48,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <RevenueCatProvider>
-        <StatusBar style="auto" />
+        <StatusBar style="light" />
         <RootNavigation />
       </RevenueCatProvider>
     </AuthProvider>

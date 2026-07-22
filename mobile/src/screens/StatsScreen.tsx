@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { getDrivingSessions, listVehicles } from "@/api/vehicles";
 import type { DrivingSession } from "@/types/vehicle";
 import { usePurchases } from "@/purchases/RevenueCatProvider";
 import { PaywallBanner } from "@/screens/components/PaywallBanner";
+import { Card } from "@/components/ui/Card";
+import { ScreenContainer } from "@/components/ui/ScreenContainer";
+import { colors, spacing, typography } from "@/theme/tokens";
 
 export function StatsScreen() {
   const [sessions, setSessions] = useState<DrivingSession[]>([]);
@@ -29,13 +33,15 @@ export function StatsScreen() {
   }, [load]);
 
   if (!isPremium) {
-    return <PaywallBanner reason="Les statistiques de conduite détaillées font partie de l'abonnement premium." />;
+    return (
+      <PaywallBanner reason="Les statistiques de conduite détaillées font partie de l'abonnement premium." />
+    );
   }
 
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.textPrimary} />
       </View>
     );
   }
@@ -45,52 +51,75 @@ export function StatsScreen() {
   const avgEfficiency = totalKm > 0 ? (totalKwh * 1000) / totalKm : 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Statistiques (30 derniers jours)</Text>
+    <ScreenContainer>
+      <Text style={styles.title}>Statistiques</Text>
+      <Text style={styles.subtitle}>30 derniers jours</Text>
+
       <View style={styles.summaryRow}>
-        <Summary label="Distance" value={`${Math.round(totalKm)} km`} />
-        <Summary label="Énergie" value={`${totalKwh.toFixed(1)} kWh`} />
-        <Summary label="Efficacité" value={`${Math.round(avgEfficiency)} Wh/km`} />
+        <Card style={styles.summaryCard}>
+          <Ionicons name="map-outline" size={18} color={colors.textSecondary} />
+          <Text style={styles.summaryValue}>{Math.round(totalKm)}</Text>
+          <Text style={styles.summaryLabel}>km parcourus</Text>
+        </Card>
+        <Card style={styles.summaryCard}>
+          <Ionicons name="flash-outline" size={18} color={colors.textSecondary} />
+          <Text style={styles.summaryValue}>{totalKwh.toFixed(1)}</Text>
+          <Text style={styles.summaryLabel}>kWh utilisés</Text>
+        </Card>
+        <Card style={styles.summaryCard}>
+          <Ionicons name="speedometer-outline" size={18} color={colors.textSecondary} />
+          <Text style={styles.summaryValue}>{Math.round(avgEfficiency)}</Text>
+          <Text style={styles.summaryLabel}>Wh/km</Text>
+        </Card>
       </View>
 
       <Text style={styles.sectionTitle}>Trajets</Text>
-      {sessions.map((session) => (
-        <View key={session.id} style={styles.sessionRow}>
-          <Text style={styles.sessionDate}>
-            {new Date(session.startedAt).toLocaleDateString()}
-          </Text>
-          <Text>{session.distanceKm.toFixed(1)} km</Text>
-          <Text>{session.efficiencyWhPerKm.toFixed(0)} Wh/km</Text>
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.summary}>
-      <Text style={styles.summaryValue}>{value}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
-    </View>
+      {sessions.length === 0 ? (
+        <Text style={styles.emptyText}>Aucun trajet enregistré sur cette période.</Text>
+      ) : (
+        <Card style={styles.sessionsCard}>
+          {sessions.map((session, index) => (
+            <View
+              key={session.id}
+              style={[styles.sessionRow, index === sessions.length - 1 && styles.sessionRowLast]}
+            >
+              <Text style={styles.sessionDate}>
+                {new Date(session.startedAt).toLocaleDateString()}
+              </Text>
+              <Text style={styles.sessionValue}>{session.distanceKm.toFixed(1)} km</Text>
+              <Text style={styles.sessionValueMuted}>
+                {session.efficiencyWhPerKm.toFixed(0)} Wh/km
+              </Text>
+            </View>
+          ))}
+        </Card>
+      )}
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, gap: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 22, fontWeight: "700" },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between" },
-  summary: { alignItems: "center" },
-  summaryValue: { fontSize: 18, fontWeight: "600" },
-  summaryLabel: { color: "#777", fontSize: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginTop: 8 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
+  title: { color: colors.textPrimary, ...typography.largeTitle },
+  subtitle: { color: colors.textSecondary, ...typography.body, marginTop: -spacing.md },
+  summaryRow: { flexDirection: "row", gap: spacing.md },
+  summaryCard: { flex: 1, alignItems: "center", gap: spacing.xs },
+  summaryValue: { color: colors.textPrimary, ...typography.title },
+  summaryLabel: { color: colors.textTertiary, ...typography.micro, textAlign: "center" },
+  sectionTitle: { color: colors.textPrimary, ...typography.headline },
+  emptyText: { color: colors.textSecondary, ...typography.body },
+  sessionsCard: { padding: 0 },
   sessionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ddd",
+    borderBottomColor: colors.border,
   },
-  sessionDate: { color: "#555" },
+  sessionRowLast: { borderBottomWidth: 0 },
+  sessionDate: { color: colors.textSecondary, ...typography.caption },
+  sessionValue: { color: colors.textPrimary, ...typography.body },
+  sessionValueMuted: { color: colors.textTertiary, ...typography.caption },
 });
