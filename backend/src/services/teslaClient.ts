@@ -6,9 +6,12 @@ import { prisma } from "../db/prisma";
  * Wrapper autour de la Tesla Fleet API.
  *
  * Deux surfaces distinctes chez Tesla :
- * - `TESLA_AUDIENCE` (fleet-api.prd.<region>.vehicle-command.tesla.com) : données
+ * - `TESLA_AUDIENCE` (fleet-api.prd.<region>.vn.cloud.tesla.com) : données
  *   véhicule en lecture (vehicles, vehicle_data) — appel REST classique avec le
- *   token OAuth de l'utilisateur.
+ *   token OAuth de l'utilisateur. Le bon nom d'hôte pour ton compte est celui
+ *   qui apparaît dans le claim `aud` de ton token OAuth (decode-le sur jwt.io
+ *   si besoin) — Tesla a changé ce nom d'hôte par le passé, mieux vaut se fier
+ *   au token qu'à une doc qui peut dater.
  * - `TESLA_COMMAND_PROXY_URL` : commandes qui nécessitent la signature du
  *   Vehicle Command Protocol (lock/unlock, climate, charge...). Ces commandes
  *   NE PEUVENT PAS être envoyées en REST simple depuis 2023 ; il faut passer
