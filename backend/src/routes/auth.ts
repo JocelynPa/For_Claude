@@ -13,11 +13,14 @@ const exchangeBodySchema = z.object({
 });
 
 export async function authRoutes(app: FastifyInstance) {
-  // Appelée par la page statique de callback (ex: GitHub Pages) qui reçoit
-  // le code depuis Tesla — pas par l'app mobile directement, puisque
-  // expo-web-browser n'intercepte pas de façon fiable une redirection HTTPS
-  // générique (voir mobile/src/screens/LoginScreen.tsx, qui poll
-  // /auth/tesla/poll/:state en parallèle pour récupérer le résultat).
+  // Appelée soit par la page statique de callback (ex: GitHub Pages) qui
+  // reçoit le code depuis Tesla, soit directement par l'app mobile quand
+  // expo-web-browser réussit à intercepter la redirection lui-même (ça
+  // dépend de la plateforme/du type de build — pas fiable dans Expo Go, mais
+  // ça arrive dans un vrai build natif). D'où la réponse en JSON dans tous
+  // les cas : la page statique ignore le corps de la réponse, l'app mobile
+  // s'en sert. Dans les deux cas, l'app mobile poll aussi
+  // /auth/tesla/poll/:state en secours si l'interception n'a pas eu lieu.
   app.post("/auth/tesla/exchange", async (request, reply) => {
     const { code, state } = exchangeBodySchema.parse(request.body);
 
@@ -63,10 +66,9 @@ export async function authRoutes(app: FastifyInstance) {
         });
       }
 
-      resolveAuthSession(state, issueSessionToken(user.id), user.id);
-      reply.type("text/html").send(
-        "<html><body><p>Connexion Tesla réussie, tu peux revenir à l'application.</p></body></html>"
-      );
+      const sessionToken = issueSessionToken(user.id);
+      resolveAuthSession(state, sessionToken, user.id);
+      reply.send({ sessionToken, userId: user.id });
     } catch (error) {
       // Le message d'erreur générique d'axios ("Request failed with status
       // code 400") ne dit rien d'utile : le détail exact renvoyé par Tesla
@@ -80,9 +82,7 @@ export async function authRoutes(app: FastifyInstance) {
           ? error.message
           : "unknown_error";
       failAuthSession(state, message);
-      reply.code(502).type("text/html").send(
-        "<html><body><p>La connexion Tesla a échoué. Retourne à l'application et réessaie.</p></body></html>"
-      );
+      reply.code(502).send({ error: message });
     }
   });
 

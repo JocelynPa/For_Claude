@@ -23,9 +23,21 @@ export function getTeslaAuthorizeUrl(redirectUri: string, state: string): string
 }
 
 /**
- * La page statique de callback (GitHub Pages) transmet le code au backend
- * elle-même — l'app mobile n'a jamais accès au code directement, elle
- * interroge le backend jusqu'à ce que l'échange soit terminé.
+ * Appelée directement par l'app quand expo-web-browser a réussi à
+ * intercepter la redirection et en a extrait le code — ce qui n'arrive pas
+ * de façon fiable partout (jamais dans Expo Go, parfois dans un build natif).
+ * Voir pollTeslaSession() pour le chemin de secours.
+ */
+export async function exchangeTeslaAuthCode(code: string, state: string): Promise<SessionResult> {
+  const { data } = await apiClient.post<SessionResult>("/auth/tesla/exchange", { code, state });
+  await setSessionToken(data.sessionToken);
+  return data;
+}
+
+/**
+ * Repli : la page statique de callback (GitHub Pages) transmet le code au
+ * backend elle-même, et l'app interroge le backend jusqu'à ce que l'échange
+ * soit terminé — utile quand l'interception ci-dessus n'a pas fonctionné.
  */
 export async function pollTeslaSession(
   state: string,

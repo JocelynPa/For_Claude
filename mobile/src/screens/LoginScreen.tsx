@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
-import { getTeslaAuthorizeUrl, pollTeslaSession } from "@/api/auth";
+import { exchangeTeslaAuthCode, getTeslaAuthorizeUrl, pollTeslaSession } from "@/api/auth";
 import { useAuth } from "@/auth/AuthContext";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { colors, spacing, typography } from "@/theme/tokens";
@@ -17,18 +17,36 @@ export function LoginScreen() {
       // Tesla n'accepte que des redirect_uri HTTPS enregistrées à l'avance
       // dans le Developer Portal (pas de schéma custom type teslacompanion://
       // ni d'URL exp:// dynamique d'Expo Go). La page statique qui reçoit la
-      // redirection transmet le code au backend elle-même — expo-web-browser
-      // n'intercepte pas cette redirection de façon fiable, donc on ne
-      // dépend pas de son résultat : dès que le navigateur se ferme (peu
-      // importe comment), on interroge le backend avec `state` jusqu'à ce
-      // que l'échange soit terminé.
+      // redirection transmet le code au backend elle-même, car
+      // expo-web-browser n'intercepte pas cette redirection de façon fiable
+      // partout : ça ne marche jamais dans Expo Go, mais ça peut marcher
+      // dans un vrai build natif — dans ce cas le navigateur se ferme avant
+      // même que la page statique ait pu s'exécuter. On gère donc les deux
+      // cas : si l'interception a fourni un code, on l'échange nous-mêmes ;
+      // sinon on retombe sur le polling en attendant la page statique.
       const redirectUri = process.env.EXPO_PUBLIC_TESLA_REDIRECT_URI ?? "";
       const state = Math.random().toString(36).slice(2);
       const authUrl = getTeslaAuthorizeUrl(redirectUri, state);
 
-      await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
-      const session = await pollTeslaSession(state);
+      let session = null;
+      if (result.type === "success" && result.url) {
+        const code = new URL(result.url).searchParams.get("code");
+        if (code) {
+          try {
+            session = await exchangeTeslaAuthCode(code, state);
+          } catch {
+            // Le code a peut-être déjà été consommé par la page statique en
+            // parallèle (à usage unique) — on retombe sur le polling.
+          }
+        }
+      }
+
+      if (!session) {
+        session = await pollTeslaSession(state);
+      }
+
       if (!session) {
         throw new Error("La connexion a expiré, réessaie.");
       }
