@@ -41,7 +41,7 @@
     "extra": {
       "apiBaseUrl": "https://api.your-domain.com",
       "eas": {
-        "projectId": "REMPLACE_MOI_APRES_EAS_INIT"
+        "projectId": "442402f5-3d7e-46c2-a7dd-c9a9121c0908"
       }
     }
   }
