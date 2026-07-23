@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { IconActionButton } from "@/components/ui/IconActionButton";
 import { StatTile } from "@/components/ui/StatTile";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { VehicleIllustration } from "@/components/ui/VehicleIllustration";
 import { colors, spacing, typography } from "@/theme/tokens";
 
 export function VehicleDashboardScreen() {
@@ -84,6 +85,8 @@ export function VehicleDashboardScreen() {
           tone={vehicle.state === "online" ? "success" : "neutral"}
         />
       </View>
+
+      <VehicleIllustration />
 
       <Card>
         <BatteryGauge percent={data.batteryLevel} rangeKm={data.batteryRange} />
