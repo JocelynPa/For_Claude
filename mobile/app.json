@@ -9,6 +9,8 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#000000",
     "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
     "assetBundlePatterns": ["**/*"],
@@ -24,6 +26,7 @@
       "package": "com.yourcompany.teslacompanion",
       "userInterfaceStyle": "dark",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       }
     },
@@ -33,7 +36,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/notification-icon.png",
           "color": "#E82127"
         }
       ]
