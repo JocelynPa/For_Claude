@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Tesla Companion",
-    "slug": "tesla-companion",
+    "slug": "appios",
     "scheme": "teslacompanion",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -11,13 +11,16 @@
     "splash": {
       "backgroundColor": "#000000"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.yourcompany.teslacompanion",
       "userInterfaceStyle": "dark",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Utilisée pour afficher la position de votre véhicule et calculer vos statistiques de trajet."
+        "NSLocationWhenInUseUsageDescription": "Utilisée pour afficher la position de votre véhicule et calculer vos statistiques de trajet.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -41,8 +44,9 @@
     "extra": {
       "apiBaseUrl": "https://api.your-domain.com",
       "eas": {
-        "projectId": "REMPLACE_MOI_APRES_EAS_INIT"
+        "projectId": "442402f5-3d7e-46c2-a7dd-c9a9121c0908"
       }
-    }
+    },
+    "owner": "jocelynpa"
   }
 }
