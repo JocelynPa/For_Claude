@@ -105,6 +105,34 @@ session d'authentification dans l'app.
    le header `Authorization: Bearer <REVENUECAT_WEBHOOK_AUTH_HEADER>` (même valeur que dans
    `backend/.env`).
 
+## Alertes de mouvement ("mode Sentinelle" réaliste)
+
+La Fleet API Tesla n'expose pas les événements caméra du Mode Sentinelle aux apps tierces — donc
+pas de vraie alerte "quelqu'un s'approche du véhicule". Ce qu'on peut détecter de façon fiable en
+comparant deux relevés d'état à quelques minutes d'intervalle (`backend/src/services/vehicleAlerts.ts`) :
+
+- un trajet qui démarre pendant que le véhicule est censé être garé
+- le Mode Sentinelle qui passe de désactivé à activé
+- le véhicule qui se déverrouille
+- la position qui change de plus de 100 m alors que le levier reste sur "Park"
+
+Un poller (`backend/src/services/alertPoller.ts`) tourne toutes les 3 minutes, compare l'état
+courant à l'instantané précédent (stocké sur `Vehicle`), et envoie une notification push Expo
+(`backend/src/services/pushNotifications.ts`) via `expo-server-sdk` si besoin. Le gating premium
+est vérifié côté serveur (pas seulement côté app) avant d'activer les alertes sur un véhicule.
+
+**Deux prérequis pour tester réellement les push, en plus de `pnpm install` :**
+1. Un projet EAS (`eas init`, gratuit) — remplacer `extra.eas.projectId` dans `mobile/app.json` par
+   l'ID généré. Sans ça, `getExpoPushTokenAsync` échoue silencieusement.
+2. Un **build de développement** (`eas build --profile development` ou `expo run:ios`/`run:android`) —
+   Expo Go ne supporte plus les notifications push distantes depuis les SDK récents.
+
+En attendant, `MOCK_TESLA_DATA=true` + `EXPO_PUBLIC_MOCK_MODE=true` affichent des boutons dans
+Réglages pour simuler un déverrouillage, une activation du Mode Sentinelle ou un déplacement, et
+déclenchent immédiatement un cycle du poller (sans attendre les 3 minutes) — utile pour vérifier
+la détection et l'envoi même sans build de développement, à condition d'avoir un token de push
+valide enregistré.
+
 ## État actuel du scaffolding
 
 Fait :
@@ -112,8 +140,10 @@ Fait :
 - Lecture des données véhicule (batterie, climatisation, verrouillage, odomètre)
 - Commandes signées (lock/unlock, climatisation, charge) via proxy Tesla
 - Écran statistiques de conduite (structure prête, alimentée par `DrivingSession`)
-- Paywall RevenueCat + gating des fonctionnalités premium
-- Schéma de base de données (Prisma) pour utilisateurs, véhicules, abonnements, trajets
+- Alertes de mouvement inattendu avec notifications push (voir ci-dessus)
+- Paywall RevenueCat + gating des fonctionnalités premium (client et serveur)
+- Schéma de base de données (Prisma) pour utilisateurs, véhicules, abonnements, trajets, tokens push
+- Mode démo (`MOCK_TESLA_DATA`) pour valider l'app sans compte Tesla enregistré
 
 Reste à faire avant une mise en production :
 - Ingestion réelle des données de conduite : soit via **Fleet Telemetry** (flux temps réel,
@@ -123,4 +153,4 @@ Reste à faire avant une mise en production :
 - Gestion multi-véhicules par utilisateur (actuellement le dashboard prend le premier véhicule)
 - Pairing de la clé virtuelle sur le véhicule (flux QR code) dans l'onboarding
 - Tests automatisés (l'essentiel de la logique métier est dans `backend/src/services`)
-- Comptes Apple Developer / Google Play Console pour la publication
+- Comptes Apple Developer / Google Play Console pour la publication, et projet EAS pour les push

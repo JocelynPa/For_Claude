@@ -1,6 +1,6 @@
 /**
- * Données factices pour valider l'app (design, navigation, flux) sans
- * dépendre de la Tesla Fleet API — utilisé quand MOCK_TESLA_DATA=true.
+ * Données factices pour valider l'app (design, navigation, flux, alertes)
+ * sans dépendre de la Tesla Fleet API — utilisé quand MOCK_TESLA_DATA=true.
  */
 
 export const MOCK_VEHICLE_ID = "mock-vehicle-1";
@@ -17,6 +17,10 @@ export const mockVehicleList = [
 let mockIsLocked = true;
 let mockIsClimateOn = false;
 let mockChargingState: "Charging" | "Complete" | "Disconnected" | "Stopped" = "Disconnected";
+let mockSentryMode = false;
+let mockShiftState: "P" | "D" | "R" | "N" | null = "P";
+let mockLatitude = 48.8566;
+let mockLongitude = 2.3522;
 
 export function getMockVehicleData(vehicleId: string) {
   return {
@@ -29,10 +33,23 @@ export function getMockVehicleData(vehicleId: string) {
     outsideTempC: 14,
     isClimateOn: mockIsClimateOn,
     isLocked: mockIsLocked,
-    latitude: 48.8566,
-    longitude: 2.3522,
+    latitude: mockLatitude,
+    longitude: mockLongitude,
     odometerKm: 18342,
     updatedAt: new Date().toISOString(),
+  };
+}
+
+/** Reproduit la forme brute de la Fleet API, pour que le poller d'alertes
+ * puisse traiter véhicules réels et factices de la même façon. */
+export function getMockRawVehicleData(_vehicleId: string) {
+  return {
+    vehicle_state: { locked: mockIsLocked, sentry_mode: mockSentryMode },
+    drive_state: {
+      latitude: mockLatitude,
+      longitude: mockLongitude,
+      shift_state: mockShiftState,
+    },
   };
 }
 
@@ -57,6 +74,23 @@ export function applyMockCommand(command: string): void {
       mockChargingState = "Stopped";
       break;
     default:
+      break;
+  }
+}
+
+/** Déclenché par un endpoint de debug pour tester le pipeline d'alertes de
+ * bout en bout sans attendre un vrai changement d'état du véhicule. */
+export function simulateMockEvent(event: "unlock" | "sentry_on" | "moved"): void {
+  switch (event) {
+    case "unlock":
+      mockIsLocked = false;
+      break;
+    case "sentry_on":
+      mockSentryMode = true;
+      break;
+    case "moved":
+      // ~150m plein nord, largement au-dessus du seuil de détection (100m).
+      mockLatitude += 0.00135;
       break;
   }
 }

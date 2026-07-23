@@ -5,6 +5,8 @@ import { authRoutes } from "./routes/auth";
 import { vehicleRoutes } from "./routes/vehicles";
 import { wellKnownRoutes } from "./routes/wellKnown";
 import { subscriptionRoutes } from "./routes/subscriptions";
+import { notificationRoutes } from "./routes/notifications";
+import { startAlertPoller } from "./services/alertPoller";
 
 async function main() {
   const app = Fastify({ logger: true });
@@ -17,6 +19,9 @@ async function main() {
   await app.register(vehicleRoutes);
   await app.register(wellKnownRoutes);
   await app.register(subscriptionRoutes);
+  await app.register(notificationRoutes);
+
+  startAlertPoller(app.log);
 
   await app.listen({ port: env.PORT, host: "0.0.0.0" });
 }

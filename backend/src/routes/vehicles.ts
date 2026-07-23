@@ -14,7 +14,9 @@ import {
   getMockDrivingSessions,
   getMockVehicleData,
   mockVehicleList,
+  simulateMockEvent,
 } from "../services/mockVehicle";
+import { pollVehicleNow } from "../services/alertPoller";
 
 const commandBodySchema = z.object({
   command: z.enum([
@@ -37,14 +39,23 @@ export async function vehicleRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authenticate);
 
   app.get("/vehicles", async (request) => {
-    if (env.MOCK_TESLA_DATA) return mockVehicleList;
-
     const userId = request.userId!;
+
+    if (env.MOCK_TESLA_DATA) {
+      const mock = mockVehicleList[0];
+      const stored = await prisma.vehicle.upsert({
+        where: { teslaId: mock.id },
+        create: { userId, teslaId: mock.id, vin: mock.vin, displayName: mock.displayName },
+        update: { displayName: mock.displayName },
+      });
+      return [{ ...mock, alertsEnabled: stored.alertsEnabled }];
+    }
+
     const teslaVehicles = await listTeslaVehicles(userId);
 
     return Promise.all(
       teslaVehicles.map(async (v: any) => {
-        await prisma.vehicle.upsert({
+        const stored = await prisma.vehicle.upsert({
           where: { teslaId: String(v.id) },
           create: {
             userId,
@@ -57,6 +68,7 @@ export async function vehicleRoutes(app: FastifyInstance) {
 
         return {
           id: String(v.id),
+          alertsEnabled: stored.alertsEnabled,
           vin: v.vin,
           displayName: v.display_name,
           state: v.state,
@@ -107,6 +119,54 @@ export async function vehicleRoutes(app: FastifyInstance) {
     await setTeslaChargeLimit(request.userId!, request.params.id, percent);
     reply.send({ ok: true });
   });
+
+  app.post<{ Params: { id: string }; Body: { enabled: boolean } }>(
+    "/vehicles/:id/alerts",
+    async (request, reply) => {
+      const { enabled } = z.object({ enabled: z.boolean() }).parse(request.body);
+
+      const vehicle = await prisma.vehicle.findUnique({ where: { teslaId: request.params.id } });
+      if (!vehicle || vehicle.userId !== request.userId) {
+        return reply.code(404).send({ error: "vehicle_not_found" });
+      }
+
+      if (enabled) {
+        const subscription = await prisma.subscription.findUnique({
+          where: { userId: request.userId! },
+        });
+        if (!subscription?.isActive) {
+          return reply.code(402).send({ error: "premium_required" });
+        }
+      }
+
+      await prisma.vehicle.update({ where: { id: vehicle.id }, data: { alertsEnabled: enabled } });
+      reply.send({ ok: true, alertsEnabled: enabled });
+    }
+  );
+
+  // Simule un événement véhicule pour tester le pipeline d'alertes de bout en
+  // bout sans attendre un vrai changement d'état — n'existe qu'en mode démo.
+  app.post<{ Params: { id: string }; Body: { event: "unlock" | "sentry_on" | "moved" } }>(
+    "/vehicles/:id/mock/simulate",
+    async (request, reply) => {
+      if (!env.MOCK_TESLA_DATA) {
+        return reply.code(404).send({ error: "not_found" });
+      }
+
+      const { event } = z
+        .object({ event: z.enum(["unlock", "sentry_on", "moved"]) })
+        .parse(request.body);
+
+      const vehicle = await prisma.vehicle.findUnique({ where: { teslaId: request.params.id } });
+      if (!vehicle || vehicle.userId !== request.userId) {
+        return reply.code(404).send({ error: "vehicle_not_found" });
+      }
+
+      simulateMockEvent(event);
+      await pollVehicleNow(vehicle.id, request.log);
+      reply.send({ ok: true });
+    }
+  );
 
   app.get<{ Params: { id: string }; Querystring: { from: string; to: string } }>(
     "/vehicles/:id/driving-sessions",

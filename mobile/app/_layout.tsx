@@ -3,6 +3,8 @@ import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/auth/AuthContext";
 import { RevenueCatProvider } from "@/purchases/RevenueCatProvider";
+import { registerForPushNotifications } from "@/notifications/registerPushToken";
+import "@/notifications/setup";
 import { colors } from "@/theme/tokens";
 
 function RootNavigation() {
@@ -19,6 +21,12 @@ function RootNavigation() {
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, isLoading, segments]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      registerForPushNotifications();
+    }
+  }, [isAuthenticated]);
 
   return (
     <Stack

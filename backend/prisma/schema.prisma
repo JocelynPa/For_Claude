@@ -14,6 +14,19 @@ model User {
   teslaCredential TeslaCredential?
   vehicles        Vehicle[]
   subscription    Subscription?
+  pushTokens      PushToken[]
+}
+
+/// Token de push Expo de l'appareil de l'utilisateur (un utilisateur peut en
+/// avoir plusieurs : plusieurs appareils, ou token renouvelé).
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 /// Tokens OAuth Tesla de l'utilisateur. Le refresh token ne quitte jamais le backend.
@@ -34,6 +47,18 @@ model Vehicle {
   teslaId     String   @unique
   vin         String
   displayName String
+
+  /// Alertes de mouvement inattendu (activées/désactivées par l'utilisateur,
+  /// mais aussi vérifiées côté serveur contre l'abonnement premium avant
+  /// d'envoyer quoi que ce soit).
+  alertsEnabled  Boolean   @default(false)
+  /// Dernier instantané connu, utilisé pour détecter les changements lors du
+  /// prochain sondage (voir services/vehicleAlerts.ts).
+  lastLatitude   Float?
+  lastLongitude  Float?
+  lastLocked     Boolean?
+  lastSentryMode Boolean?
+  lastPolledAt   DateTime?
 
   drivingSessions DrivingSession[]
 

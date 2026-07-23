@@ -3,6 +3,7 @@ export interface Vehicle {
   vin: string;
   displayName: string;
   state: "online" | "asleep" | "offline";
+  alertsEnabled: boolean;
 }
 
 export interface VehicleData {

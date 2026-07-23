@@ -33,3 +33,15 @@ export async function getDrivingSessions(
   );
   return data;
 }
+
+export async function setVehicleAlertsEnabled(vehicleId: string, enabled: boolean): Promise<void> {
+  await apiClient.post(`/vehicles/${vehicleId}/alerts`, { enabled });
+}
+
+/** Uniquement disponible quand le backend tourne avec MOCK_TESLA_DATA=true. */
+export async function simulateMockVehicleEvent(
+  vehicleId: string,
+  event: "unlock" | "sentry_on" | "moved"
+): Promise<void> {
+  await apiClient.post(`/vehicles/${vehicleId}/mock/simulate`, { event });
+}
