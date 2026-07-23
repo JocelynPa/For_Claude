@@ -1,10 +1,6 @@
 {
   "cli": {
-<<<<<<< HEAD
     "version": ">= 21.1.0",
-=======
-    "version": ">= 13.0.0",
->>>>>>> 658b9f95b94210a6e53aa0e1570622e41aa08520
     "appVersionSource": "remote"
   },
   "build": {
@@ -12,15 +8,12 @@
       "developmentClient": true,
       "distribution": "internal"
     },
-<<<<<<< HEAD
-=======
     "development-simulator": {
       "extends": "development",
       "ios": {
         "simulator": true
       }
     },
->>>>>>> 658b9f95b94210a6e53aa0e1570622e41aa08520
     "preview": {
       "distribution": "internal"
     },
