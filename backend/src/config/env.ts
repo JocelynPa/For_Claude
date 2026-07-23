@@ -16,6 +16,11 @@ const envSchema = z.object({
 
   REVENUECAT_WEBHOOK_AUTH_HEADER: z.string(),
   REVENUECAT_SECRET_API_KEY: z.string().optional(),
+
+  // Sert des données véhicule factices au lieu d'appeler la Fleet API —
+  // utile pour valider l'app pendant que l'enregistrement du domaine
+  // partenaire Tesla n'est pas encore terminé. À désactiver dès que possible.
+  MOCK_TESLA_DATA: z.coerce.boolean().default(false),
 });
 
 export const env = envSchema.parse(process.env);

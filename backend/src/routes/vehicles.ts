@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
+import { env } from "../config/env";
 import { authenticate } from "../middleware/authenticate";
 import {
   getTeslaVehicleData,
@@ -8,6 +9,12 @@ import {
   sendTeslaCommand,
   setTeslaChargeLimit,
 } from "../services/teslaClient";
+import {
+  applyMockCommand,
+  getMockDrivingSessions,
+  getMockVehicleData,
+  mockVehicleList,
+} from "../services/mockVehicle";
 
 const commandBodySchema = z.object({
   command: z.enum([
@@ -30,6 +37,8 @@ export async function vehicleRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authenticate);
 
   app.get("/vehicles", async (request) => {
+    if (env.MOCK_TESLA_DATA) return mockVehicleList;
+
     const userId = request.userId!;
     const teslaVehicles = await listTeslaVehicles(userId);
 
@@ -57,6 +66,8 @@ export async function vehicleRoutes(app: FastifyInstance) {
   });
 
   app.get<{ Params: { id: string } }>("/vehicles/:id/data", async (request) => {
+    if (env.MOCK_TESLA_DATA) return getMockVehicleData(request.params.id);
+
     const data = await getTeslaVehicleData(request.userId!, request.params.id);
 
     return {
@@ -78,12 +89,21 @@ export async function vehicleRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { id: string } }>("/vehicles/:id/command", async (request, reply) => {
     const { command } = commandBodySchema.parse(request.body);
+
+    if (env.MOCK_TESLA_DATA) {
+      applyMockCommand(command);
+      return reply.send({ ok: true });
+    }
+
     await sendTeslaCommand(request.userId!, request.params.id, command);
     reply.send({ ok: true });
   });
 
   app.post<{ Params: { id: string } }>("/vehicles/:id/charge-limit", async (request, reply) => {
     const { percent } = chargeLimitBodySchema.parse(request.body);
+
+    if (env.MOCK_TESLA_DATA) return reply.send({ ok: true });
+
     await setTeslaChargeLimit(request.userId!, request.params.id, percent);
     reply.send({ ok: true });
   });
@@ -91,6 +111,10 @@ export async function vehicleRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string }; Querystring: { from: string; to: string } }>(
     "/vehicles/:id/driving-sessions",
     async (request) => {
+      if (env.MOCK_TESLA_DATA) {
+        return getMockDrivingSessions(request.query.from, request.query.to);
+      }
+
       const vehicle = await prisma.vehicle.findUnique({ where: { teslaId: request.params.id } });
       if (!vehicle) return [];
 
