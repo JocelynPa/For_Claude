@@ -11,11 +11,15 @@ final class AppEnvironment: ObservableObject {
     let sentryService: SentryServicing
 
     init(
-        auth: AuthManager = AuthManager(),
+        auth: AuthManager? = nil,
         vehicleService: VehicleServicing = MockVehicleService(),
         sentryService: SentryServicing = MockSentryService()
     ) {
-        self.auth = auth
+        // `auth` defaults to nil rather than `AuthManager()` directly: default
+        // parameter values are evaluated in a nonisolated context, and
+        // AuthManager's initializer is @MainActor-isolated. Constructing it
+        // here, inside the body of this @MainActor init, is isolated correctly.
+        self.auth = auth ?? AuthManager()
         self.vehicleService = vehicleService
         self.sentryService = sentryService
     }
