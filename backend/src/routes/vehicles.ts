@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { authenticate } from "../middleware/authenticate.js";
-import { fleetApiFetch, refreshAccessToken } from "../services/teslaClient.js";
+import { fleetApiFetch, signedCommandFetch, refreshAccessToken } from "../services/teslaClient.js";
 import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } from "../services/teslaMapper.js";
 
 // `vehicle_data` fails while the car is asleep. Try once, wake it up on
@@ -54,12 +54,16 @@ export async function vehicleRoutes(app: FastifyInstance) {
     );
   });
 
+  // Commands below go through `signedCommandFetch` (tesla-http-proxy), not
+  // `fleetApiFetch` directly — Tesla silently rejects unsigned command
+  // requests on any vehicle enforcing the Vehicle Command Protocol. See
+  // backend/keys/README.md for how to run the proxy.
   const lockBody = z.object({ locked: z.boolean() });
   app.post("/vehicles/:id/command/lock", async (request) => {
     const { id } = request.params as { id: string };
     const { locked } = lockBody.parse(request.body);
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/${locked ? "door_lock" : "door_unlock"}`, token, {
+    return signedCommandFetch(`/vehicles/${id}/command/${locked ? "door_lock" : "door_unlock"}`, token, {
       method: "POST",
     });
   });
@@ -70,13 +74,13 @@ export async function vehicleRoutes(app: FastifyInstance) {
     const { on, targetTempC } = climateBody.parse(request.body);
     const token = await getValidAccessToken(request.userId!);
     if (on) {
-      await fleetApiFetch(`/vehicles/${id}/command/set_temps`, token, {
+      await signedCommandFetch(`/vehicles/${id}/command/set_temps`, token, {
         method: "POST",
         body: JSON.stringify({ driver_temp: targetTempC, passenger_temp: targetTempC }),
       });
-      return fleetApiFetch(`/vehicles/${id}/command/auto_conditioning_start`, token, { method: "POST" });
+      return signedCommandFetch(`/vehicles/${id}/command/auto_conditioning_start`, token, { method: "POST" });
     }
-    return fleetApiFetch(`/vehicles/${id}/command/auto_conditioning_stop`, token, { method: "POST" });
+    return signedCommandFetch(`/vehicles/${id}/command/auto_conditioning_stop`, token, { method: "POST" });
   });
 
   const chargeLimitBody = z.object({ percent: z.number().min(50).max(100) });
@@ -84,7 +88,7 @@ export async function vehicleRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const { percent } = chargeLimitBody.parse(request.body);
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/set_charge_limit`, token, {
+    return signedCommandFetch(`/vehicles/${id}/command/set_charge_limit`, token, {
       method: "POST",
       body: JSON.stringify({ percent }),
     });
@@ -93,25 +97,25 @@ export async function vehicleRoutes(app: FastifyInstance) {
   app.post("/vehicles/:id/command/charge-start", async (request) => {
     const { id } = request.params as { id: string };
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/charge_start`, token, { method: "POST" });
+    return signedCommandFetch(`/vehicles/${id}/command/charge_start`, token, { method: "POST" });
   });
 
   app.post("/vehicles/:id/command/charge-stop", async (request) => {
     const { id } = request.params as { id: string };
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/charge_stop`, token, { method: "POST" });
+    return signedCommandFetch(`/vehicles/${id}/command/charge_stop`, token, { method: "POST" });
   });
 
   app.post("/vehicles/:id/command/flash-lights", async (request) => {
     const { id } = request.params as { id: string };
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/flash_lights`, token, { method: "POST" });
+    return signedCommandFetch(`/vehicles/${id}/command/flash_lights`, token, { method: "POST" });
   });
 
   app.post("/vehicles/:id/command/honk-horn", async (request) => {
     const { id } = request.params as { id: string };
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch(`/vehicles/${id}/command/honk_horn`, token, { method: "POST" });
+    return signedCommandFetch(`/vehicles/${id}/command/honk_horn`, token, { method: "POST" });
   });
 
   // Tesla's Fleet API doesn't expose charging/driving history or Sentry clip

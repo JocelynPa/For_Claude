@@ -1,6 +1,13 @@
+import { Agent } from "undici";
 import { env } from "../config/env.js";
 
 const TESLA_AUTH_BASE = "https://auth.tesla.com/oauth2/v3";
+
+// `tesla-http-proxy` serves HTTPS with a self-signed cert when run locally
+// for development (see backend/keys/README.md). Trust it only for that one
+// local call — never disable TLS verification more broadly than this.
+const insecureLocalProxyAgent = new Agent({ connect: { rejectUnauthorized: false } });
+const isLocalProxy = /^https:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(env.TESLA_COMMAND_PROXY_URL);
 
 interface TeslaTokenResponse {
   access_token: string;
@@ -83,6 +90,35 @@ export async function fleetApiFetch<T = unknown>(
   });
   if (!response.ok) {
     throw new Error(`Tesla Fleet API error: ${response.status} ${await response.text()}`);
+  }
+  const body = (await response.json()) as { response: T };
+  return body.response;
+}
+
+// Vehicle *commands* (lock, climate, charging, flash, honk) must be signed
+// with the Vehicle Command private key on any vehicle enforcing the Vehicle
+// Command Protocol — a plain Bearer-token POST straight to the Fleet API is
+// silently rejected. `tesla-http-proxy` (Tesla's official Go proxy) does
+// that signing transparently; route all command calls through it instead
+// of `fleetApiFetch`. Read-only calls (vehicle list, vehicle_data, wake_up)
+// are unaffected and keep using `fleetApiFetch` directly.
+export async function signedCommandFetch<T = unknown>(
+  path: string,
+  accessToken: string,
+  init: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`${env.TESLA_COMMAND_PROXY_URL}/api/1${path}`, {
+    ...init,
+    headers: {
+      ...init.headers,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    // @ts-expect-error `dispatcher` is undici-specific and not in the DOM fetch types Node ships.
+    dispatcher: isLocalProxy ? insecureLocalProxyAgent : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`Tesla command proxy error: ${response.status} ${await response.text()}`);
   }
   const body = (await response.json()) as { response: T };
   return body.response;

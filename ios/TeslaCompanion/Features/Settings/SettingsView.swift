@@ -29,6 +29,26 @@ struct SettingsView: View {
                     Toggle("Rapports de conduite", isOn: $drivingReports)
                 }
 
+                Section {
+                    if let addVirtualKeyURL {
+                        Link(destination: addVirtualKeyURL) {
+                            HStack {
+                                Image(systemName: "key.fill").foregroundStyle(AppTheme.Colors.accent)
+                                Text("Ajouter la clé virtuelle")
+                                    .foregroundStyle(AppTheme.Colors.textPrimary)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Sécurité")
+                } footer: {
+                    Text("Requis pour que les commandes (verrouillage, climatisation…) fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
+                }
+
                 Section("Compte") {
                     Button(role: .destructive) {
                         auth.signOut()
@@ -50,5 +70,13 @@ struct SettingsView: View {
                 PaywallView()
             }
         }
+    }
+
+    /// Deep link Tesla documents as the reliable way to trigger the virtual
+    /// key pairing prompt in the owner's Tesla app — waiting for it to
+    /// appear automatically on the first signed command is unreliable.
+    private var addVirtualKeyURL: URL? {
+        guard let host = URL(string: AppConfig.apiBaseURL)?.host else { return nil }
+        return URL(string: "https://tesla.com/_ak/\(host)")
     }
 }
