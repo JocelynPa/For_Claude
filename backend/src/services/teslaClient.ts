@@ -45,7 +45,13 @@ export async function refreshAccessToken(refreshToken: string): Promise<TeslaTok
   return response.json() as Promise<TeslaTokenResponse>;
 }
 
-export async function fleetApiFetch(path: string, accessToken: string, init: RequestInit = {}) {
+// Every Tesla Fleet API response is wrapped as `{ "response": ... }`; unwrap
+// it here so call sites work directly with the payload's actual shape.
+export async function fleetApiFetch<T = unknown>(
+  path: string,
+  accessToken: string,
+  init: RequestInit = {}
+): Promise<T> {
   const response = await fetch(`${env.TESLA_AUDIENCE}/api/1${path}`, {
     ...init,
     headers: {
@@ -57,5 +63,6 @@ export async function fleetApiFetch(path: string, accessToken: string, init: Req
   if (!response.ok) {
     throw new Error(`Tesla Fleet API error: ${response.status} ${await response.text()}`);
   }
-  return response.json();
+  const body = (await response.json()) as { response: T };
+  return body.response;
 }

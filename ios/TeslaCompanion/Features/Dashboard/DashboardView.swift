@@ -4,6 +4,7 @@ struct DashboardView: View {
     @EnvironmentObject private var environment: AppEnvironment
     @State private var vehicle: Vehicle?
     @State private var isLoading = true
+    @State private var loadError: String?
     @State private var showClimateSheet = false
 
     var body: some View {
@@ -22,6 +23,23 @@ struct DashboardView: View {
                         ChargeCard(charge: vehicle.battery, onLimitChange: setChargeLimit)
                     } else if isLoading {
                         ProgressView().padding(.top, 80)
+                    } else {
+                        VStack(spacing: AppSpacing.md) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(AppTheme.Colors.warning)
+                            Text(loadError ?? "Aucun véhicule trouvé sur ce compte.")
+                                .font(AppFont.body())
+                                .foregroundStyle(AppTheme.Colors.textSecondary)
+                                .multilineTextAlignment(.center)
+                            Button("Réessayer") {
+                                Task { await load() }
+                            }
+                            .font(AppFont.body())
+                            .foregroundStyle(AppTheme.Colors.accent)
+                        }
+                        .padding(.top, 80)
+                        .padding(.horizontal, AppSpacing.lg)
                     }
                 }
                 .padding(AppSpacing.md)
@@ -42,7 +60,12 @@ struct DashboardView: View {
 
     private func load() async {
         isLoading = true
-        vehicle = try? await environment.vehicleService.fetchVehicles().first
+        loadError = nil
+        do {
+            vehicle = try await environment.vehicleService.fetchVehicles().first
+        } catch {
+            loadError = "Connexion au véhicule impossible : \(error.localizedDescription)"
+        }
         isLoading = false
     }
 
