@@ -45,6 +45,27 @@ export async function refreshAccessToken(refreshToken: string): Promise<TeslaTok
   return response.json() as Promise<TeslaTokenResponse>;
 }
 
+// Client-credentials token identifying the *app* itself (not a driver),
+// used only for the one-time partner_accounts registration below.
+export async function fetchPartnerToken(): Promise<string> {
+  const response = await fetch(`${TESLA_AUTH_BASE}/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: env.TESLA_CLIENT_ID,
+      client_secret: env.TESLA_CLIENT_SECRET,
+      scope: "openid vehicle_device_data vehicle_cmds vehicle_charging_cmds",
+      audience: env.TESLA_AUDIENCE,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Tesla partner token request failed: ${response.status} ${await response.text()}`);
+  }
+  const body = (await response.json()) as { access_token: string };
+  return body.access_token;
+}
+
 // Every Tesla Fleet API response is wrapped as `{ "response": ... }`; unwrap
 // it here so call sites work directly with the payload's actual shape.
 export async function fleetApiFetch<T = unknown>(
