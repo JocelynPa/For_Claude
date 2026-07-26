@@ -27,6 +27,17 @@ openssl ec -in backend/keys/private-key.pem -pubout -out backend/keys/public-key
 2. Renseigner le domaine où `public-key.pem` sera servi ("Allowed Origin(s)")
 3. Renseigner `TESLA_REDIRECT_URI` (doit pointer vers
    `/auth/tesla/callback` sur ce même domaine)
-4. Une fois le véhicule associé, il faudra également faire approuver la
+4. **Enregistrer le "partner account"** (obligatoire, une fois par domaine et
+   par région Fleet API) :
+   ```bash
+   npm run tesla:register-partner
+   ```
+   Sans cette étape, tout appel Fleet API échoue avec une erreur `412
+   Account ... must be registered in the current region`. À relancer à
+   chaque fois que le domaine change (ex. nouvelle URL ngrok gratuite après
+   un redémarrage) — pour éviter ça, utilisez un domaine ngrok statique
+   (`ngrok http --domain=votre-domaine.ngrok-free.app 3000`, gratuit sur les
+   comptes personnels).
+5. Une fois le véhicule associé, il faudra également faire approuver la
    "virtual key" depuis l'app Tesla officielle du propriétaire (Tesla exige
    cette étape manuelle pour toute app tierce envoyant des commandes signées).
