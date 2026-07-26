@@ -74,13 +74,61 @@ compilation.
 
 ## Démarrer le backend
 
-Prérequis : Node 20+, Docker (pour Postgres), un compte
+Prérequis : Node 20+, une base Postgres locale (via Docker ou installée
+nativement, voir ci-dessous), un compte
 [Tesla Developer](https://developer.tesla.com).
 
 ```bash
 cd backend
 cp .env.example .env   # renseigner TESLA_CLIENT_ID/SECRET, JWT_SECRET, etc.
-docker compose up -d   # Postgres local
+```
+
+### Option A — Postgres via Docker
+
+```bash
+docker compose up -d
+```
+
+### Option B — Postgres natif sur macOS (sans Docker)
+
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
+
+Si `psql`/`createdb` ne sont pas dans le PATH après l'installation (paquet
+"keg-only") :
+
+```bash
+# Apple Silicon
+echo 'export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
+# Intel
+echo 'export PATH="/usr/local/opt/postgresql@16/bin:$PATH"' >> ~/.zshrc
+
+source ~/.zshrc
+```
+
+Créez un rôle et une base identiques aux identifiants par défaut du
+`DATABASE_URL` de `.env.example`, pour n'avoir rien d'autre à changer :
+
+```bash
+psql postgres -c "CREATE ROLE tesla_companion WITH LOGIN PASSWORD 'tesla_companion' CREATEDB;"
+createdb -O tesla_companion tesla_companion
+```
+
+Vérifiez la connexion :
+
+```bash
+psql "postgresql://tesla_companion:tesla_companion@localhost:5432/tesla_companion" -c "\conninfo"
+```
+
+Alternative graphique sans Homebrew : [Postgres.app](https://postgresapp.com)
+(démarre un serveur Postgres local depuis la barre de menu ; exécutez les
+mêmes commandes `CREATE ROLE`/`createdb` ci-dessus une fois l'app lancée).
+
+### Suite (commune aux deux options)
+
+```bash
 npm install
 npm run prisma:migrate
 npm run dev

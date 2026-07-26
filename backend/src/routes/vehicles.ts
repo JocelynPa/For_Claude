@@ -3,6 +3,25 @@ import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { fleetApiFetch, refreshAccessToken } from "../services/teslaClient.js";
+import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } from "../services/teslaMapper.js";
+
+// `vehicle_data` fails while the car is asleep. Try once, wake it up on
+// failure, wait for it to come online, and retry once more. Returns null
+// (rather than throwing) if the car still doesn't respond — the mapper
+// falls back to safe defaults for battery/climate in that case.
+async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
+  try {
+    return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
+  } catch {
+    try {
+      await fleetApiFetch(`/vehicles/${id}/wake_up`, token, { method: "POST" });
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
+    } catch {
+      return null;
+    }
+  }
+}
 
 async function getValidAccessToken(userId: string): Promise<string> {
   const credential = await prisma.teslaCredential.findUniqueOrThrow({ where: { userId } });
@@ -26,7 +45,13 @@ export async function vehicleRoutes(app: FastifyInstance) {
 
   app.get("/vehicles", async (request) => {
     const token = await getValidAccessToken(request.userId!);
-    return fleetApiFetch("/vehicles", token);
+    const list = await fleetApiFetch<TeslaVehicleListItem[]>("/vehicles", token);
+    return Promise.all(
+      list.map(async (item) => {
+        const data = await fetchVehicleDataWithWake(String(item.id), token);
+        return mapTeslaVehicle(item, data);
+      })
+    );
   });
 
   const lockBody = z.object({ locked: z.boolean() });

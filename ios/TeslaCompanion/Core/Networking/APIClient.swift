@@ -1,10 +1,23 @@
 import Foundation
 
-enum APIError: Error {
+enum APIError: LocalizedError {
     case invalidURL
     case server(Int)
-    case decoding
+    case decoding(String)
     case unauthorized
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            "URL invalide."
+        case .server(let status):
+            "Le serveur a répondu avec le code \(status)."
+        case .decoding(let details):
+            "Réponse du serveur illisible (\(details))."
+        case .unauthorized:
+            "Session expirée, reconnectez-vous."
+        }
+    }
 }
 
 struct EmptyResponse: Decodable {}
@@ -52,7 +65,7 @@ final class APIClient {
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw APIError.decoding
+            throw APIError.decoding(error.localizedDescription)
         }
     }
 }
