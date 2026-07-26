@@ -47,8 +47,14 @@ final class APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method
-        request.httpBody = endpoint.body
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Only attach a JSON Content-Type when there's an actual body: bodyless
+        // POSTs (honk, flash lights, charge start/stop...) with
+        // Content-Type: application/json but no body are rejected by Fastify's
+        // default JSON parser ("Body cannot be empty").
+        if let body = endpoint.body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         if let authToken {
             request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         }
