@@ -67,7 +67,20 @@ l'outil officiel de Tesla (Go) qui effectue cette signature.
 
 ```bash
 # Nécessite Go (brew install go)
-go install github.com/teslamotors/vehicle-command/cmd/tesla-http-proxy@latest
+#
+# `go install github.com/teslamotors/vehicle-command/cmd/tesla-http-proxy@latest`
+# échoue ("go.mod ... contains one or more replace directives") : ces
+# directives ne sont respectées que si vous êtes DANS le module. Il faut
+# donc cloner le dépôt et builder depuis l'intérieur :
+git clone https://github.com/teslamotors/vehicle-command.git /tmp/vehicle-command
+cd /tmp/vehicle-command
+go install ./cmd/tesla-http-proxy
+cd -
+
+# Vérifiez que le binaire est bien dans le PATH (go install l'installe dans $GOPATH/bin)
+echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+tesla-http-proxy -h   # doit afficher l'aide, pas "command not found"
 
 # Le proxy sert du HTTPS : générez un certificat auto-signé pour son usage local
 openssl req -x509 -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
