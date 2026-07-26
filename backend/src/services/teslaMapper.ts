@@ -47,7 +47,14 @@ const MILES_TO_KM = 1.60934;
  */
 export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleData | null) {
   return {
-    id: String(list.id),
+    // Use the VIN as the app-facing vehicle id, not Tesla's numeric Fleet
+    // API id: the Fleet API's own read endpoints (vehicle_data, wake_up)
+    // accept either, but tesla-http-proxy's signed command endpoints
+    // require the VIN specifically and reject the numeric id outright
+    // ("expected 17-character VIN in path"). Using the VIN everywhere the
+    // app addresses a vehicle avoids threading two different identifiers
+    // through the app for reads vs. commands.
+    id: list.vin,
     displayName: list.display_name,
     vin: list.vin,
     model: data ? (CAR_TYPE_LABELS[data.vehicle_config.car_type] ?? data.vehicle_config.car_type) : "Tesla",
