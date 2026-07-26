@@ -69,31 +69,31 @@ struct SentryHomeView: View {
     }
 }
 
+/// Tesla exposes no live camera stream through any public API (Fleet API,
+/// Owner API, or otherwise) — not to third-party apps, and not even to
+/// Tesla's own official app. Sentry/dashcam footage only exists as clips
+/// saved to a USB drive physically plugged into the car; there's no remote
+/// live view to build here, so this card explains that instead of
+/// pretending a camera grid could ever show anything.
 struct CameraGridView: View {
-    private let columns = [GridItem(.flexible(), spacing: AppSpacing.sm), GridItem(.flexible(), spacing: AppSpacing.sm)]
-
     var body: some View {
         Card {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                SectionHeader(title: "Caméras en direct")
-                LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
-                    ForEach(SentryCamera.allCases, id: \.self) { camera in
-                        VStack(spacing: AppSpacing.xs) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                                    .fill(AppTheme.Colors.surfaceElevated)
-                                Image(systemName: "video.slash.fill")
-                                    .foregroundStyle(AppTheme.Colors.textSecondary)
-                            }
-                            .aspectRatio(16.0 / 10.0, contentMode: .fit)
-                            Text(camera.label)
-                                .font(AppFont.caption())
-                                .foregroundStyle(AppTheme.Colors.textSecondary)
-                        }
-                    }
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                    Text("Caméras")
+                        .font(AppFont.title())
+                        .foregroundStyle(AppTheme.Colors.textPrimary)
                 }
-                Text("Le flux en direct nécessite que le véhicule soit réveillé et connecté.")
-                    .font(AppFont.caption())
+                Text("""
+                Tesla ne propose aucun flux caméra en direct via son API, pour \
+                aucune application tierce — ni même dans son app officielle. \
+                Seuls les clips Sentry enregistrés sur la clé USB du véhicule \
+                existent ; ils apparaissent ci-dessous une fois synchronisés \
+                depuis cette clé.
+                """)
+                    .font(AppFont.body())
                     .foregroundStyle(AppTheme.Colors.textSecondary)
             }
         }
