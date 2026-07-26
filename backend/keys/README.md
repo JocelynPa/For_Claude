@@ -90,16 +90,13 @@ openssl req -x509 -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
 # Lancer le proxy (dans un terminal dédié, en plus de `npm run dev`)
 tesla-http-proxy \
   -tls-key backend/keys/proxy-tls.key \
-  -tls-crt backend/keys/proxy-tls.crt \
+  -cert backend/keys/proxy-tls.crt \
   -key-file backend/keys/private-key.pem \
   -port 4443
 ```
 
+(`-cert`, pas `-tls-crt` — vérifié via `tesla-http-proxy -h`.)
+
 `backend/.env` : `TESLA_COMMAND_PROXY_URL=https://localhost:4443` (valeur
 par défaut). Le backend fait confiance au certificat auto-signé uniquement
 pour cet appel local précis (`teslaClient.ts`), jamais plus largement.
-
-⚠️ Les noms exacts des flags de `tesla-http-proxy` peuvent évoluer — vérifiez
-`tesla-http-proxy -h` ou le README du dépôt
-[teslamotors/vehicle-command](https://github.com/teslamotors/vehicle-command)
-si une commande échoue avec une erreur d'argument inconnu.
