@@ -19,7 +19,7 @@ targets:
         CFBundleDisplayName: Tesla Companion
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
-        API_BASE_URL: https://api.teslacompanion.app
+        API_BASE_URL: https://grapple-battering-donation.ngrok-free.dev
         CFBundleURLTypes:
           - CFBundleURLName: com.teslacompanion.oauth
             CFBundleURLSchemes:
