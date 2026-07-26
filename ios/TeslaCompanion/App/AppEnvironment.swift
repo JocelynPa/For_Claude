@@ -12,15 +12,12 @@ final class AppEnvironment: ObservableObject {
 
     init(
         auth: AuthManager? = nil,
-        vehicleService: VehicleServicing = MockVehicleService(),
+        vehicleService: VehicleServicing? = nil,
         sentryService: SentryServicing = MockSentryService()
     ) {
-        // `auth` defaults to nil rather than `AuthManager()` directly: default
-        // parameter values are evaluated in a nonisolated context, and
-        // AuthManager's initializer is @MainActor-isolated. Constructing it
-        // here, inside the body of this @MainActor init, is isolated correctly.
-        self.auth = auth ?? AuthManager()
-        self.vehicleService = vehicleService
+        let resolvedAuth = auth ?? AuthManager()
+        self.auth = resolvedAuth
+        self.vehicleService = vehicleService ?? TeslaAPIService(auth: resolvedAuth)
         self.sentryService = sentryService
     }
 }
