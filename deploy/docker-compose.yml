@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: tesla_companion
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Signs vehicle commands with the Vehicle Command private key. Deliberately
   # has no `ports:` mapping — it's only reachable by `backend` over the
@@ -28,6 +33,11 @@ services:
       - "4443"
     volumes:
       - ../backend/keys:/keys:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # TLS termination is handled by your existing Nginx Proxy Manager
   # instance, not by anything in this compose file — point an NPM Proxy
@@ -46,6 +56,11 @@ services:
     depends_on:
       - postgres
       - tesla-proxy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres-data:
