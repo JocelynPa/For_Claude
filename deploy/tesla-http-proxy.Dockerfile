@@ -2,7 +2,7 @@
 # doesn't work for it (its go.mod has replace directives that only resolve
 # from inside the module) — build from a clone instead, same as the local
 # dev setup documented in backend/keys/README.md.
-FROM golang:1.22-bookworm AS build
+FROM golang:1.23-bookworm AS build
 WORKDIR /src
 RUN git clone https://github.com/teslamotors/vehicle-command.git . \
     && go build -o /tesla-http-proxy ./cmd/tesla-http-proxy

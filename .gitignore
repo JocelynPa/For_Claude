@@ -10,6 +10,7 @@ dist/
 backend/dist/
 backend/keys/*.pem
 backend/keys/*.key
+backend/keys/*.crt
 !backend/keys/README.md
 
 # Prisma
