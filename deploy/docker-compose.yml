@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tesla_companion
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: tesla_companion
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # Signs vehicle commands with the Vehicle Command private key. Deliberately
+  # has no `ports:` mapping — it's only reachable by `backend` over the
+  # internal Docker network, never exposed to the host or the internet.
+  tesla-proxy:
+    build:
+      context: .
+      dockerfile: tesla-http-proxy.Dockerfile
+    restart: unless-stopped
+    command:
+      - -tls-key
+      - /keys/proxy-tls.key
+      - -cert
+      - /keys/proxy-tls.crt
+      - -key-file
+      - /keys/private-key.pem
+      - -port
+      - "4443"
+    volumes:
+      - ../backend/keys:/keys:ro
+
+  backend:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ../backend/keys:/app/keys:ro
+    depends_on:
+      - postgres
+      - tesla-proxy
+
+  # Public-facing reverse proxy: terminates TLS for $DOMAIN with an
+  # automatically issued and renewed Let's Encrypt certificate, forwards
+  # everything to `backend`. This is the only service with published ports.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
