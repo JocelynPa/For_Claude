@@ -3,11 +3,11 @@ import { env } from "../config/env.js";
 
 const TESLA_AUTH_BASE = "https://auth.tesla.com/oauth2/v3";
 
-// `tesla-http-proxy` serves HTTPS with a self-signed cert when run locally
-// for development (see backend/keys/README.md). Trust it only for that one
-// local call — never disable TLS verification more broadly than this.
-const insecureLocalProxyAgent = new Agent({ connect: { rejectUnauthorized: false } });
-const isLocalProxy = /^https:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(env.TESLA_COMMAND_PROXY_URL);
+// `tesla-http-proxy` serves HTTPS with a self-signed cert (see
+// backend/keys/README.md). Trust it only for that one call, only when
+// TESLA_COMMAND_PROXY_INSECURE_TLS is explicitly set — never disable TLS
+// verification more broadly than this.
+const insecureProxyAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 interface TeslaTokenResponse {
   access_token: string;
@@ -115,7 +115,7 @@ export async function signedCommandFetch<T = unknown>(
       "Content-Type": "application/json",
     },
     // @ts-expect-error `dispatcher` is undici-specific and not in the DOM fetch types Node ships.
-    dispatcher: isLocalProxy ? insecureLocalProxyAgent : undefined,
+    dispatcher: env.TESLA_COMMAND_PROXY_INSECURE_TLS ? insecureProxyAgent : undefined,
   });
   if (!response.ok) {
     throw new Error(`Tesla command proxy error: ${response.status} ${await response.text()}`);

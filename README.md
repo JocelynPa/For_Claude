@@ -13,6 +13,7 @@ accent indigo discret, dark mode adaptatif).
 ```
 ios/          Application SwiftUI (projet généré via XcodeGen)
 backend/      API Fastify/TypeScript : OAuth Tesla, proxy Fleet API, webhook RevenueCat
+deploy/       Déploiement Docker Compose (NAS, VPS...) : backend + Postgres + proxy de signature + Caddy/TLS
 ```
 
 ## Pourquoi un backend ?
@@ -137,6 +138,13 @@ npm run dev
 Voir `backend/keys/README.md` pour générer la paire de clés Vehicle Command
 requise par Tesla (nécessaire pour les commandes signées comme le
 verrouillage ou la climatisation).
+
+### Déploiement permanent (au lieu de `npm run dev` + tunnel)
+
+Pour que le backend tourne en continu sans dépendre de votre machine (et
+sans ngrok), voir `deploy/README.md` : Docker Compose avec Postgres,
+`tesla-http-proxy` et Caddy (TLS Let's Encrypt automatique) derrière un vrai
+domaine — testé pour un NAS Docker, portable vers un VPS/AWS.
 
 ## Design
 

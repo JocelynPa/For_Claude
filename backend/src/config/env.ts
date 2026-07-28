@@ -14,6 +14,17 @@ const schema = z.object({
   // to work on any vehicle enforcing the Vehicle Command Protocol — see
   // backend/keys/README.md.
   TESLA_COMMAND_PROXY_URL: z.string().url().default("https://localhost:4443"),
+  // The proxy serves HTTPS with a self-signed cert (there's no public CA to
+  // validate against for a purely internal service) whether run on
+  // localhost or as a Docker Compose service — trust it explicitly via this
+  // flag rather than guessing from the URL's hostname, which breaks as soon
+  // as TESLA_COMMAND_PROXY_URL points at a Docker service name instead of
+  // localhost. Only ever set this for a proxy instance you control on a
+  // private/internal network.
+  TESLA_COMMAND_PROXY_INSECURE_TLS: z
+    .string()
+    .default("true")
+    .transform((value) => value === "true"),
   APP_REDIRECT_SCHEME: z.string().default("teslacompanion"),
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
 });
