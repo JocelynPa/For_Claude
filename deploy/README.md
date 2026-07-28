@@ -1,12 +1,15 @@
 # Déploiement — NAS UGREEN (Docker) avec domaine Route 53
 
 Héberge le backend, Postgres et le proxy de signature Tesla en continu sur
-votre NAS, derrière `tesla.jp-engineering.fr` (Route 53), avec TLS
-automatique via Caddy + Let's Encrypt. Étape intermédiaire avant un
-déploiement AWS — l'architecture (Docker Compose) est directement portable.
+votre NAS, derrière `tesla.jp-engineering.fr` (Route 53), avec TLS géré par
+votre instance **Nginx Proxy Manager** existante. Étape intermédiaire avant
+un déploiement AWS — l'architecture (Docker Compose) est directement
+portable.
 
 `tesla-http-proxy` n'est **jamais exposé à Internet** : seul `backend` lui
-parle, sur le réseau Docker interne. Seul Caddy (443/80) est publié.
+parle, sur le réseau Docker interne. `backend` publie son port 3000 sur le
+réseau local du NAS (pas via le routeur) pour que NPM puisse le joindre ;
+seul NPM (443/80, déjà en place) est réellement exposé à Internet.
 
 ## 1. Prérequis
 
@@ -34,9 +37,9 @@ votre IP publique domicile.
 
 ## 3. Routeur
 
-Redirigez les ports **80** et **443** de votre box/routeur vers l'IP locale
-du NAS (443 pour le trafic HTTPS, 80 pour la validation automatique du
-certificat Let's Encrypt par Caddy).
+Rien à faire ici si NPM reçoit déjà le trafic 80/443 pour vos autres
+services — on ajoute juste un nouveau Proxy Host dans NPM, pas un nouveau
+point d'entrée réseau.
 
 ## 4. Tesla Developer
 
@@ -53,8 +56,8 @@ cp .env.example .env
 
 Renseignez `.env` : `POSTGRES_PASSWORD` (et son écho dans `DATABASE_URL`),
 `JWT_SECRET`, `TESLA_CLIENT_ID`/`TESLA_CLIENT_SECRET` (repris du portail
-Tesla Developer). `DOMAIN` et `TESLA_REDIRECT_URI` sont déjà pré-remplis
-pour `tesla.jp-engineering.fr`.
+Tesla Developer). `TESLA_REDIRECT_URI` est déjà pré-rempli pour
+`tesla.jp-engineering.fr`.
 
 ## 6. Lancer
 
@@ -63,13 +66,25 @@ docker compose up -d --build
 ```
 
 Premier démarrage : la construction de `tesla-http-proxy` clone et compile
-Go depuis les sources (peut prendre quelques minutes). Caddy va tenter
-d'obtenir un certificat Let's Encrypt dès qu'il détecte que le DNS et le
-port 80 pointent correctement vers lui — vérifiez les logs :
+Go depuis les sources (peut prendre quelques minutes).
+
+Vérifiez que le backend répond en local sur le NAS avant de configurer NPM :
 
 ```bash
-docker compose logs -f caddy
+curl -i http://localhost:3000/health
 ```
+
+## 6bis. Proxy Host dans Nginx Proxy Manager
+
+Dans l'interface NPM, **Proxy Hosts → Add Proxy Host** :
+
+- **Domain Names** : `tesla.jp-engineering.fr`
+- **Forward Hostname / IP** : l'IP locale du NAS (ex. `192.168.1.x`) — ou le
+  nom du service `backend` si NPM tourne sur le même réseau Docker que ce
+  compose (à rattacher explicitement via `docker network connect` sinon)
+- **Forward Port** : `3000`
+- Onglet **SSL** : demandez un certificat Let's Encrypt, activez **Force
+  SSL** et **HTTP/2**
 
 ## 7. Migration de la base
 

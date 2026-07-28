@@ -29,36 +29,23 @@ services:
     volumes:
       - ../backend/keys:/keys:ro
 
+  # TLS termination is handled by your existing Nginx Proxy Manager
+  # instance, not by anything in this compose file — point an NPM Proxy
+  # Host at <NAS LAN IP>:3000 (see deploy/README.md). Published on the
+  # host's LAN interface, not forwarded through the router, so it isn't
+  # reachable from the internet directly — only via NPM's 80/443.
   backend:
     build:
       context: ../backend
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "3000:3000"
     volumes:
       - ../backend/keys:/app/keys:ro
     depends_on:
       - postgres
       - tesla-proxy
 
-  # Public-facing reverse proxy: terminates TLS for $DOMAIN with an
-  # automatically issued and renewed Let's Encrypt certificate, forwards
-  # everything to `backend`. This is the only service with published ports.
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      DOMAIN: ${DOMAIN:?Set DOMAIN in deploy/.env}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      - backend
-
 volumes:
   postgres-data:
-  caddy-data:
-  caddy-config:
