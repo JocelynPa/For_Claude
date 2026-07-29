@@ -68,20 +68,27 @@ docker compose up -d --build
 Premier démarrage : la construction de `tesla-http-proxy` clone et compile
 Go depuis les sources (peut prendre quelques minutes).
 
-Vérifiez que le backend répond en local sur le NAS avant de configurer NPM :
+Le backend a sa propre IP fixe sur le LAN via un réseau macvlan
+(`BACKEND_STATIC_IP` dans `.env`), plutôt que d'être publié sur l'IP du NAS.
+Vérifiez qu'il répond avant de configurer NPM :
 
 ```bash
-curl -i http://localhost:3000/health
+curl -i http://<BACKEND_STATIC_IP>:3000/health
 ```
+
+⚠️ Un réseau macvlan isole en général le conteneur de l'hôte Docker
+lui-même et des conteneurs restés en réseau bridge classique — donc si NPM
+tourne aussi en conteneur sur ce NAS, il doit être rattaché à ce **même**
+réseau macvlan pour pouvoir joindre `BACKEND_STATIC_IP`, sinon la requête
+n'aboutira jamais malgré une configuration NPM correcte.
 
 ## 6bis. Proxy Host dans Nginx Proxy Manager
 
 Dans l'interface NPM, **Proxy Hosts → Add Proxy Host** :
 
 - **Domain Names** : `tesla.jp-engineering.fr`
-- **Forward Hostname / IP** : l'IP locale du NAS (ex. `192.168.1.x`) — ou le
-  nom du service `backend` si NPM tourne sur le même réseau Docker que ce
-  compose (à rattacher explicitement via `docker network connect` sinon)
+- **Forward Hostname / IP** : `<BACKEND_STATIC_IP>` (la valeur définie dans
+  `deploy/.env`)
 - **Forward Port** : `3000`
 - Onglet **SSL** : demandez un certificat Let's Encrypt, activez **Force
   SSL** et **HTTP/2**
