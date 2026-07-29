@@ -68,19 +68,27 @@ docker compose up -d --build
 Premier démarrage : la construction de `tesla-http-proxy` clone et compile
 Go depuis les sources (peut prendre quelques minutes).
 
-Le backend a sa propre IP fixe sur le LAN via un réseau macvlan
-(`BACKEND_STATIC_IP` dans `.env`), plutôt que d'être publié sur l'IP du NAS.
-Vérifiez qu'il répond avant de configurer NPM :
+Les trois conteneurs (`backend`, `postgres`, `tesla-proxy`) ont chacun leur
+propre IP fixe sur le LAN via un réseau macvlan (`BACKEND_STATIC_IP`,
+`POSTGRES_STATIC_IP`, `TESLA_PROXY_STATIC_IP` dans `.env`), en plus de
+rester joignables entre eux par nom de service sur le réseau Docker interne.
+Vérifiez que le backend répond avant de configurer NPM :
 
 ```bash
 curl -i http://<BACKEND_STATIC_IP>:3000/health
 ```
 
-⚠️ Un réseau macvlan isole en général le conteneur de l'hôte Docker
-lui-même et des conteneurs restés en réseau bridge classique — donc si NPM
-tourne aussi en conteneur sur ce NAS, il doit être rattaché à ce **même**
-réseau macvlan pour pouvoir joindre `BACKEND_STATIC_IP`, sinon la requête
-n'aboutira jamais malgré une configuration NPM correcte.
+⚠️ `tesla-proxy` était volontairement sans aucune présence réseau LAN
+auparavant (uniquement joignable par `backend`, jamais par le reste du
+réseau) — il détient la clé privée qui signe les commandes véhicule. Le
+mettre sur le macvlan le rend désormais joignable par n'importe quel
+appareil de votre réseau local. Restreignez l'accès au niveau du
+routeur/firewall du LAN si vous voulez conserver cette isolation.
+
+Un réseau macvlan isole en général le conteneur de l'hôte Docker lui-même
+et des conteneurs restés en réseau bridge classique — donc NPM doit être
+rattaché à ce **même** réseau macvlan pour pouvoir joindre ces IP (déjà le
+cas ici).
 
 ## 6bis. Proxy Host dans Nginx Proxy Manager
 
