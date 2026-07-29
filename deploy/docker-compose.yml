@@ -37,6 +37,7 @@ services:
       - /keys/private-key.pem
       - -port
       - "4443"
+      - -verbose
     volumes:
       - ../backend/keys:/keys:ro
     logging:
