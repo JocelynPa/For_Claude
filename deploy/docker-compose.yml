@@ -8,10 +8,21 @@ services:
       POSTGRES_DB: tesla_companion
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      default: {}
+      macvlan_lan:
+        ipv4_address: ${POSTGRES_STATIC_IP:?Set POSTGRES_STATIC_IP in deploy/.env}
 
-  # Signs vehicle commands with the Vehicle Command private key. Deliberately
-  # has no `ports:` mapping — it's only reachable by `backend` over the
-  # internal Docker network, never exposed to the host or the internet.
+  # Signs vehicle commands with the Vehicle Command private key. Previously
+  # had no LAN presence at all — now also on macvlan_lan at your request,
+  # which means it's reachable by any device on the local network, not just
+  # `backend`. Restrict access at your LAN/firewall level if you want to
+  # preserve the original "only backend can reach it" guarantee.
   tesla-proxy:
     build:
       context: .
@@ -28,24 +39,50 @@ services:
       - "4443"
     volumes:
       - ../backend/keys:/keys:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      default: {}
+      macvlan_lan:
+        ipv4_address: ${TESLA_PROXY_STATIC_IP:?Set TESLA_PROXY_STATIC_IP in deploy/.env}
 
   # TLS termination is handled by your existing Nginx Proxy Manager
   # instance, not by anything in this compose file — point an NPM Proxy
-  # Host at <NAS LAN IP>:3000 (see deploy/README.md). Published on the
-  # host's LAN interface, not forwarded through the router, so it isn't
-  # reachable from the internet directly — only via NPM's 80/443.
+  # Host at ${BACKEND_STATIC_IP}:3000 (see deploy/README.md).
+  #
+  # Attached to both `default` (so it can still reach postgres/tesla-proxy
+  # by service name over the normal Docker network) and the macvlan network
+  # with a fixed LAN IP. No `ports:` mapping — the macvlan IP replaces it.
   backend:
     build:
       context: ../backend
     restart: unless-stopped
     env_file: .env
-    ports:
-      - "3000:3000"
     volumes:
       - ../backend/keys:/app/keys:ro
     depends_on:
       - postgres
       - tesla-proxy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      default: {}
+      macvlan_lan:
+        ipv4_address: ${BACKEND_STATIC_IP:?Set BACKEND_STATIC_IP in deploy/.env}
 
 volumes:
   postgres-data:
+
+networks:
+  # References a macvlan network already created on the NAS (its exact
+  # subnet/parent-interface config lives there, not here) — not created by
+  # this compose file. `docker network ls` on the NAS to confirm its name.
+  macvlan_lan:
+    external: true
+    name: ${MACVLAN_NETWORK_NAME:?Set MACVLAN_NETWORK_NAME in deploy/.env}
