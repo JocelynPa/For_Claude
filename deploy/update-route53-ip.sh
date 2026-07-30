@@ -10,7 +10,7 @@
 set -euo pipefail
 
 HOSTED_ZONE_ID="REPLACE_WITH_YOUR_HOSTED_ZONE_ID"
-RECORD_NAME="tesla.jp-engineering.fr"
+RECORD_NAME="companion.jp-engineering.fr"
 TTL=300
 
 CURRENT_IP="$(curl -s https://checkip.amazonaws.com)"
