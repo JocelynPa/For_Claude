@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @State private var showPaywall = false
+    @State private var tokenCopied = false
     @AppStorage("sentry_notifications_enabled") private var sentryNotifications = true
     @AppStorage("driving_reports_enabled") private var drivingReports = true
 
@@ -55,6 +57,25 @@ struct SettingsView: View {
                     } label: {
                         Text("Se déconnecter")
                     }
+                }
+
+                Section {
+                    Button {
+                        guard let token = auth.accessToken else { return }
+                        UIPasteboard.general.string = token
+                        tokenCopied = true
+                    } label: {
+                        HStack {
+                            Image(systemName: tokenCopied ? "checkmark" : "doc.on.doc")
+                                .foregroundStyle(AppTheme.Colors.accent)
+                            Text(tokenCopied ? "Token copié" : "Copier le token de session")
+                                .foregroundStyle(AppTheme.Colors.textPrimary)
+                        }
+                    }
+                } header: {
+                    Text("Développeur")
+                } footer: {
+                    Text("Pour tester l'API backend directement (ex. curl). À retirer avant publication sur l'App Store.")
                 }
 
                 Section {
