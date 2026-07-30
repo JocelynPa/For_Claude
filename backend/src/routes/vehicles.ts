@@ -204,7 +204,9 @@ export async function vehicleRoutes(app: FastifyInstance) {
           ca,
           fields: { SentryMode: { interval_seconds: intervalSeconds } },
           alert_types: ["service"],
-          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+          // Tesla caps this at 364 days from its own server clock, not 365 —
+          // use 360 to leave margin against clock skew / request latency.
+          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 360,
         },
       }),
     });
