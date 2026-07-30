@@ -58,22 +58,25 @@ compilation.
 - **Sentry Mode** : statut actif/inactif (pastille rouge animée, données
   réelles via `vehicle_state.sentry_mode`), journal d'activité en timeline
   (transitions en ligne/hors ligne, Sentry activé/désactivé, activité
-  détectée avec niveau et action déclenchée) — texte uniquement, pas
-  d'image ni de vidéo
+  détectée avec niveau Aware/Panic) — texte uniquement, pas d'image ni de
+  vidéo. Alimentable en données réelles via **Tesla Fleet Telemetry** (le
+  véhicule streame directement son état, voir `deploy/README.md` §11) —
+  non activé par défaut, l'onglet est vide tant que ce n'est pas configuré
 - **Paywall** premium (plans mensuel/annuel) et **Réglages** (notifications,
   déconnexion)
 
 ### Ce qui reste à faire pour une v1 réelle
 
 - Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only)
-- Poller `vehicle_data` côté backend pour peupler charge/conduite/Sentry
-  réels (Tesla ne fournit pas cet historique nativement, cf.
-  `backend/src/routes/vehicles.ts`) — les transitions en ligne/hors ligne et
-  Sentry activé/désactivé sont dérivables de cette façon ; l'activité
-  détectée (description, niveau, action déclenchée) nécessite en plus de
-  lire les métadonnées `event.json` écrites sur la clé USB du véhicule à
-  côté des clips (pas besoin de la vidéo elle-même, mais toujours un accès
-  physique/companion device — hors périmètre Fleet API)
+- Poller `vehicle_data` côté backend pour peupler charge/conduite réels
+  (Tesla ne fournit pas cet historique nativement, cf.
+  `backend/src/routes/vehicles.ts`)
+- La timeline Sentry a sa propre voie réelle (Fleet Telemetry, voir
+  `deploy/README.md` §11) mais reste non déployée par défaut ; l'action
+  déclenchée (ex. klaxon) associée à une détection n'est en revanche pas
+  disponible via ce signal seul — nécessiterait en plus de lire les
+  métadonnées `event.json` sur la clé USB du véhicule (hors périmètre pour
+  l'instant)
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Icône d'app, écran de lancement personnalisé, tests

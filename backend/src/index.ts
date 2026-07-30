@@ -5,6 +5,7 @@ import { authRoutes } from "./routes/auth.js";
 import { vehicleRoutes } from "./routes/vehicles.js";
 import { wellKnownRoutes } from "./routes/wellKnown.js";
 import { subscriptionRoutes } from "./routes/subscriptions.js";
+import { startTelemetryIngestor } from "./telemetry/ingestor.js";
 
 const app = Fastify({ logger: true });
 
@@ -21,3 +22,5 @@ app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((error) => {
   app.log.error(error);
   process.exit(1);
 });
+
+startTelemetryIngestor().catch((error) => app.log.error(error));

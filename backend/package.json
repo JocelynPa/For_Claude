@@ -11,7 +11,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "tesla:register-partner": "tsx src/scripts/registerPartnerAccount.ts",
-    "tesla:register-partner:built": "node dist/scripts/registerPartnerAccount.js"
+    "tesla:register-partner:built": "node dist/scripts/registerPartnerAccount.js",
+    "tesla:register-vehicle-telemetry": "tsx src/scripts/registerVehicleTelemetry.ts",
+    "tesla:register-vehicle-telemetry:built": "node dist/scripts/registerVehicleTelemetry.js"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
@@ -19,6 +21,7 @@
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "jsonwebtoken": "^9.0.2",
+    "redis": "^4.7.0",
     "undici": "^6.19.2",
     "zod": "^3.23.8"
   },
