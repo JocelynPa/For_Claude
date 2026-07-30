@@ -123,7 +123,9 @@ services:
   fleet-telemetry:
     image: tesla/fleet-telemetry:latest
     restart: unless-stopped
-    command: ["-config=/etc/fleet-telemetry/config.json"]
+    # The official image has no baked-in ENTRYPOINT (unlike our own
+    # tesla-http-proxy build) — the binary path must be the first element.
+    command: ["/fleet-telemetry", "-config=/etc/fleet-telemetry/config.json"]
     volumes:
       - ./fleet-telemetry-config.json:/etc/fleet-telemetry/config.json:ro
       - certbot-certs:/etc/letsencrypt:ro
