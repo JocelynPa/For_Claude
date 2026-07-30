@@ -29,6 +29,8 @@ services:
       dockerfile: tesla-http-proxy.Dockerfile
     restart: unless-stopped
     command:
+      - -host
+      - 0.0.0.0
       - -tls-key
       - /keys/proxy-tls.key
       - -cert
