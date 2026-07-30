@@ -1,33 +1,76 @@
 import Foundation
 
 final class MockSentryService: SentryServicing {
-    private var events: [SentryEvent] = {
-        let calendar = Calendar.current
-        let kinds: [SentryEventKind] = [.sentry, .dashcamSaved, .honk]
-        return (0..<9).map { index in
-            let kind = kinds[index % kinds.count]
-            return SentryEvent(
-                id: UUID(),
-                date: calendar.date(byAdding: .hour, value: -index * 7, to: .now) ?? .now,
-                kind: kind,
-                cameras: [.front, .back, .left, .right].shuffled().prefix(Int.random(in: 1...4)).map { $0 },
-                durationSeconds: Int.random(in: 8...45),
-                location: index % 2 == 0 ? "Domicile" : "Parking Centre Ville",
-                isNew: index < 3
-            )
-        }
-    }()
+    private var entries: [SentryTimelineEntry] = MockSentryService.generateEntries()
 
-    func fetchEvents(vehicleId: String) async throws -> [SentryEvent] {
+    func fetchEvents(vehicleId: String) async throws -> [SentryTimelineEntry] {
         try await Task.sleep(nanoseconds: 350_000_000)
-        return events
+        return entries
     }
 
     func markAllSeen(vehicleId: String) async throws {
-        events = events.map { var event = $0; event.isNew = false; return event }
+        entries = entries.map { var entry = $0; entry.isNew = false; return entry }
     }
 
     func deleteEvent(_ eventId: UUID) async throws {
-        events.removeAll { $0.id == eventId }
+        entries.removeAll { $0.id == eventId }
+    }
+
+    private static func generateEntries() -> [SentryTimelineEntry] {
+        let calendar = Calendar.current
+
+        func stateChange(_ kind: SentryTimelineKind, minutesAgo: Int, isNew: Bool = false) -> SentryTimelineEntry {
+            SentryTimelineEntry(
+                id: UUID(),
+                date: calendar.date(byAdding: .minute, value: -minutesAgo, to: .now) ?? .now,
+                kind: kind,
+                activityDescription: nil,
+                awarenessLevel: nil,
+                firedActions: [],
+                isNew: isNew
+            )
+        }
+
+        func activity(
+            minutesAgo: Int,
+            description: String,
+            level: SentryAwarenessLevel,
+            fired: [SentryFiredAction] = [],
+            isNew: Bool = false
+        ) -> SentryTimelineEntry {
+            SentryTimelineEntry(
+                id: UUID(),
+                date: calendar.date(byAdding: .minute, value: -minutesAgo, to: .now) ?? .now,
+                kind: .activityDetected,
+                activityDescription: description,
+                awarenessLevel: level,
+                firedActions: fired,
+                isNew: isNew
+            )
+        }
+
+        return [
+            stateChange(.vehicleOffline, minutesAgo: 60),
+            stateChange(.sentryModeDisabled, minutesAgo: 78),
+            stateChange(.sentryModeEnabled, minutesAgo: 78),
+            stateChange(.sentryModeDisabled, minutesAgo: 78),
+            activity(
+                minutesAgo: 82,
+                description: "Quelqu'un s'approche du véhicule",
+                level: .aware,
+                fired: [SentryFiredAction(label: "Klaxon", systemImage: "speaker.wave.2.fill")],
+                isNew: true
+            ),
+            stateChange(.sentryModeEnabled, minutesAgo: 95, isNew: true),
+            stateChange(.vehicleOnline, minutesAgo: 108),
+            stateChange(.vehicleOffline, minutesAgo: 445),
+            stateChange(.sentryModeEnabled, minutesAgo: 450),
+            stateChange(.vehicleOnline, minutesAgo: 500),
+            stateChange(.vehicleOffline, minutesAgo: 1800),
+            stateChange(.vehicleOnline, minutesAgo: 1848),
+            stateChange(.vehicleOffline, minutesAgo: 1889),
+            stateChange(.vehicleOnline, minutesAgo: 1922),
+            stateChange(.vehicleOffline, minutesAgo: 1969),
+        ]
     }
 }

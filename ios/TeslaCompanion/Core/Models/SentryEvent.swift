@@ -1,46 +1,54 @@
 import Foundation
 
-enum SentryCamera: String, Codable, CaseIterable {
-    case front, back, left, right
+enum SentryTimelineKind: String, Codable {
+    case vehicleOnline
+    case vehicleOffline
+    case sentryModeEnabled
+    case sentryModeDisabled
+    case activityDetected
 
     var label: String {
         switch self {
-        case .front: "Avant"
-        case .back: "Arrière"
-        case .left: "Gauche"
-        case .right: "Droite"
+        case .vehicleOnline: "Véhicule en ligne"
+        case .vehicleOffline: "Véhicule hors ligne"
+        case .sentryModeEnabled: "Sentry Mode activé"
+        case .sentryModeDisabled: "Sentry Mode désactivé"
+        case .activityDetected: "Activité détectée"
         }
     }
 }
 
-enum SentryEventKind: String, Codable {
-    case sentry, dashcamSaved, honk
+enum SentryAwarenessLevel: String, Codable {
+    case aware, alert, panic
 
     var label: String {
         switch self {
-        case .sentry: "Alerte Sentry"
-        case .dashcamSaved: "Clip sauvegardé"
-        case .honk: "Klaxon"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .sentry: "shield.lefthalf.filled"
-        case .dashcamSaved: "video.fill"
-        case .honk: "horn.fill"
+        case .aware: "Aware"
+        case .alert: "Alert"
+        case .panic: "Panic"
         }
     }
 }
 
-struct SentryEvent: Identifiable, Codable, Hashable {
+struct SentryFiredAction: Codable, Hashable {
+    var label: String
+    var systemImage: String
+}
+
+/// A single row in the Sentry timeline: either a plain vehicle/Sentry state
+/// transition (online/offline, Sentry enabled/disabled), or a richer
+/// activity-detected entry — text only, no image or video, matching how
+/// Sentry Mode's own alert history works (no live/remote camera access
+/// exists via Tesla's API either way, see SentryHomeView).
+struct SentryTimelineEntry: Identifiable, Codable, Hashable {
     let id: UUID
     var date: Date
-    var kind: SentryEventKind
-    var cameras: [SentryCamera]
-    var durationSeconds: Int
-    var location: String
-    var isNew: Bool
+    var kind: SentryTimelineKind
 
-    var thumbnailSystemImage: String { kind.icon }
+    // Only set when kind == .activityDetected.
+    var activityDescription: String?
+    var awarenessLevel: SentryAwarenessLevel?
+    var firedActions: [SentryFiredAction]
+
+    var isNew: Bool
 }
