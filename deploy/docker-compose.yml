@@ -99,6 +99,15 @@ services:
   # via DNS-01 (Route 53) — doesn't need port 80 and works on its own
   # subdomain independently of NPM. Not started by `docker compose up`
   # (no restart policy); run manually, see deploy/README.md.
+  #
+  # Re-running the same command later (e.g. from cron) doubles as renewal:
+  # `certbot certonly` on an already-valid cert just prints "not yet due
+  # for renewal" and exits 0 without changing anything, no separate
+  # `renew` invocation needed.
+  #
+  # certbot writes certs as root:root with the private key at 600, which
+  # fleet-telemetry's non-root container user can't read even through a
+  # read-only mount — chmod after issuance so it can.
   certbot:
     image: certbot/dns-route53
     volumes:
@@ -106,12 +115,14 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID in deploy/.env}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY in deploy/.env}
-    entrypoint: >
-      certbot certonly
-      --dns-route53
-      --non-interactive --agree-tos
-      --email ${LETSENCRYPT_EMAIL:?Set LETSENCRYPT_EMAIL in deploy/.env}
-      -d ${FLEET_TELEMETRY_HOSTNAME:?Set FLEET_TELEMETRY_HOSTNAME in deploy/.env}
+    entrypoint:
+      - sh
+      - -c
+      - >
+        certbot certonly --dns-route53 --non-interactive --agree-tos
+        --email ${LETSENCRYPT_EMAIL:?Set LETSENCRYPT_EMAIL in deploy/.env}
+        -d ${FLEET_TELEMETRY_HOSTNAME:?Set FLEET_TELEMETRY_HOSTNAME in deploy/.env}
+        && chmod -R a+rX /etc/letsencrypt/live /etc/letsencrypt/archive
 
   # Tesla's official Fleet Telemetry reference server: vehicles stream
   # SentryMode state directly to it (mTLS, vehicle-initiated). Terminates
