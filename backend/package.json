@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "tesla:register-partner": "tsx src/scripts/registerPartnerAccount.ts"
+    "tesla:register-partner": "tsx src/scripts/registerPartnerAccount.ts",
+    "tesla:register-partner:built": "node dist/scripts/registerPartnerAccount.js"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",

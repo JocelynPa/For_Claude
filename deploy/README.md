@@ -119,7 +119,7 @@ Comme le domaine a changé, l'enregistrement partner (voir
 `backend/keys/README.md`) doit être refait pour ce nouveau domaine :
 
 ```bash
-docker compose exec backend npm run tesla:register-partner
+docker compose exec backend npm run tesla:register-partner:built
 ```
 
 ## 9. Pairage de la clé virtuelle
