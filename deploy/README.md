@@ -103,8 +103,14 @@ Dans l'interface NPM, **Proxy Hosts → Add Proxy Host** :
 
 ## 7. Migration de la base
 
+`backend` ayant une IP macvlan fixe, `docker compose run` (qui crée un
+nouveau conteneur) entre en conflit avec le conteneur déjà en cours
+d'exécution sur cette même IP (`Error response from daemon: failed to set
+up container networking: Address already in use`). Utilisez `exec` à la
+place, qui exécute la commande **dans** le conteneur déjà lancé :
+
 ```bash
-docker compose run --rm backend npm run prisma:deploy
+docker compose exec backend npm run prisma:deploy
 ```
 
 ## 8. Enregistrement partner account Tesla
@@ -113,7 +119,7 @@ Comme le domaine a changé, l'enregistrement partner (voir
 `backend/keys/README.md`) doit être refait pour ce nouveau domaine :
 
 ```bash
-docker compose run --rm backend npm run tesla:register-partner
+docker compose exec backend npm run tesla:register-partner:built
 ```
 
 ## 9. Pairage de la clé virtuelle
