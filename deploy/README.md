@@ -189,10 +189,10 @@ docker compose run --rm certbot
 ```
 
 Ne fait pas partie de `docker compose up` — à relancer manuellement avant
-expiration (~90 jours), ou planifiez via cron :
-```bash
-docker compose run --rm certbot renew
-```
+expiration (~90 jours), ou planifiez via cron. C'est la **même commande**
+pour l'émission initiale et le renouvellement : `certbot certonly` sur un
+certificat encore valide se contente d'afficher "not yet due for renewal"
+et ne fait rien, pas besoin d'une commande `renew` séparée.
 
 ### 11.4 Routeur
 
