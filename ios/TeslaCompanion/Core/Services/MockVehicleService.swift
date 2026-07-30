@@ -23,6 +23,7 @@ final class MockVehicleService: VehicleServicing {
         ),
         climate: ClimateState(isOn: false, insideTempC: 21, outsideTempC: 18, targetTempC: 21, isPreconditioning: false),
         isLocked: true,
+        isSentryModeActive: true,
         odometerKm: 18240
     )
 
