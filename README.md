@@ -1,9 +1,9 @@
 # Tesla Companion
 
 App iOS native (SwiftUI) qui réunit le contrôle véhicule et les statistiques
-façon **TezLab**, et la visionneuse d'événements/clips façon **Sentry Mode
-Pro**, dans une interface sobre et élégante (palette graphite/blanc cassé,
-accent indigo discret, dark mode adaptatif).
+façon **TezLab**, et un journal d'activité Sentry façon **Sentry Mode Pro**,
+dans une interface sobre et élégante (palette graphite/blanc cassé, accent
+indigo discret, dark mode adaptatif).
 
 > Ce dépôt repart de zéro : un précédent scaffold en Expo/React Native a été
 > retiré. Cette version est un vrai projet iOS natif.
@@ -55,9 +55,11 @@ compilation.
   (avec réglage de consigne), phares, klaxon, limite de charge
 - **Statistiques** : résumé mensuel (distance, coût, CO₂ évité), graphique
   d'efficacité (Swift Charts), historique de charge
-- **Sentry Mode** : grille des 4 caméras, timeline d'événements (alertes,
-  clips sauvegardés, klaxon), lecteur de clip avec sélecteur de caméra et
-  scrubber
+- **Sentry Mode** : statut actif/inactif (pastille rouge animée, données
+  réelles via `vehicle_state.sentry_mode`), journal d'activité en timeline
+  (transitions en ligne/hors ligne, Sentry activé/désactivé, activité
+  détectée avec niveau et action déclenchée) — texte uniquement, pas
+  d'image ni de vidéo
 - **Paywall** premium (plans mensuel/annuel) et **Réglages** (notifications,
   déconnexion)
 
@@ -66,9 +68,12 @@ compilation.
 - Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only)
 - Poller `vehicle_data` côté backend pour peupler charge/conduite/Sentry
   réels (Tesla ne fournit pas cet historique nativement, cf.
-  `backend/src/routes/vehicles.ts`)
-- Flux vidéo Sentry réel (nécessite de lire les clips depuis la clé USB/carte
-  du véhicule ou un stockage cloud tiers — hors périmètre Fleet API)
+  `backend/src/routes/vehicles.ts`) — les transitions en ligne/hors ligne et
+  Sentry activé/désactivé sont dérivables de cette façon ; l'activité
+  détectée (description, niveau, action déclenchée) nécessite en plus de
+  lire les métadonnées `event.json` écrites sur la clé USB du véhicule à
+  côté des clips (pas besoin de la vidéo elle-même, mais toujours un accès
+  physique/companion device — hors périmètre Fleet API)
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Icône d'app, écran de lancement personnalisé, tests

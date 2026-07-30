@@ -14,5 +14,6 @@ struct Vehicle: Identifiable, Codable, Hashable {
     var battery: ChargeState
     var climate: ClimateState
     var isLocked: Bool
+    var isSentryModeActive: Bool
     var odometerKm: Double
 }

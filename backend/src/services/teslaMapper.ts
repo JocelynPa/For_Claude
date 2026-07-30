@@ -7,7 +7,7 @@ export interface TeslaVehicleListItem {
 }
 
 export interface TeslaVehicleData {
-  vehicle_state: { locked: boolean; odometer: number };
+  vehicle_state: { locked: boolean; odometer: number; sentry_mode: boolean };
   charge_state: {
     battery_level: number;
     battery_range: number; // miles, regardless of the car's display unit setting
@@ -80,6 +80,7 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
       isPreconditioning: false,
     },
     isLocked: data?.vehicle_state.locked ?? true,
+    isSentryModeActive: data?.vehicle_state.sentry_mode ?? false,
     odometerKm: data ? Math.round(data.vehicle_state.odometer * MILES_TO_KM) : 0,
   };
 }
