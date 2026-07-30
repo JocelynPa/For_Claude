@@ -1,7 +1,7 @@
 # Déploiement — NAS UGREEN (Docker) avec domaine Route 53
 
 Héberge le backend, Postgres et le proxy de signature Tesla en continu sur
-votre NAS, derrière `tesla.jp-engineering.fr` (Route 53), avec TLS géré par
+votre NAS, derrière `companion.jp-engineering.fr` (Route 53), avec TLS géré par
 votre instance **Nginx Proxy Manager** existante. Étape intermédiaire avant
 un déploiement AWS — l'architecture (Docker Compose) est directement
 portable.
@@ -25,7 +25,7 @@ seul NPM (443/80, déjà en place) est réellement exposé à Internet.
 
 ## 2. DNS (Route 53)
 
-Créez un enregistrement `A` pour `tesla.jp-engineering.fr` pointant vers
+Créez un enregistrement `A` pour `companion.jp-engineering.fr` pointant vers
 votre IP publique domicile.
 
 - **IP fixe** : créez l'enregistrement une fois dans la console Route 53 (ou
@@ -44,8 +44,8 @@ point d'entrée réseau.
 ## 4. Tesla Developer
 
 Dans le portail https://developer.tesla.com, mettez à jour :
-- **Allowed Origin(s)** : `https://tesla.jp-engineering.fr`
-- **Allowed Redirect URI(s)** : `https://tesla.jp-engineering.fr/auth/tesla/callback`
+- **Allowed Origin(s)** : `https://companion.jp-engineering.fr`
+- **Allowed Redirect URI(s)** : `https://companion.jp-engineering.fr/auth/tesla/callback`
 
 ## 5. Configuration
 
@@ -57,7 +57,7 @@ cp .env.example .env
 Renseignez `.env` : `POSTGRES_PASSWORD` (et son écho dans `DATABASE_URL`),
 `JWT_SECRET`, `TESLA_CLIENT_ID`/`TESLA_CLIENT_SECRET` (repris du portail
 Tesla Developer). `TESLA_REDIRECT_URI` est déjà pré-rempli pour
-`tesla.jp-engineering.fr`.
+`companion.jp-engineering.fr`.
 
 ## 6. Lancer
 
@@ -94,7 +94,7 @@ cas ici).
 
 Dans l'interface NPM, **Proxy Hosts → Add Proxy Host** :
 
-- **Domain Names** : `tesla.jp-engineering.fr`
+- **Domain Names** : `companion.jp-engineering.fr`
 - **Forward Hostname / IP** : `<BACKEND_STATIC_IP>` (la valeur définie dans
   `deploy/.env`)
 - **Forward Port** : `3000`
@@ -122,20 +122,20 @@ Le domaine ayant changé, réappairez la clé virtuelle sur le véhicule (sur
 l'iPhone du propriétaire, dans Safari) :
 
 ```
-https://tesla.com/_ak/tesla.jp-engineering.fr
+https://tesla.com/_ak/companion.jp-engineering.fr
 ```
 
 ## 10. Mettre à jour l'app iOS
 
-Dans `ios/project.yml`, `API_BASE_URL: https://tesla.jp-engineering.fr`, puis
+Dans `ios/project.yml`, `API_BASE_URL: https://companion.jp-engineering.fr`, puis
 `xcodegen generate` et rebuild. Plus besoin d'ngrok ni de laisser le Mac
 allumé.
 
 ## Vérifications
 
 ```bash
-curl -i https://tesla.jp-engineering.fr/health
-curl -i https://tesla.jp-engineering.fr/.well-known/appspecific/com.tesla.3p.public-key.pem
+curl -i https://companion.jp-engineering.fr/health
+curl -i https://companion.jp-engineering.fr/.well-known/appspecific/com.tesla.3p.public-key.pem
 ```
 
 ## Mises à jour
