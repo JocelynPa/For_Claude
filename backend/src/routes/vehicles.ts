@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { readFile } from "node:fs/promises";
 import { z } from "zod";
+import { env } from "../config/env.js";
 import { prisma } from "../db/prisma.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { fleetApiFetch, signedCommandFetch, refreshAccessToken } from "../services/teslaClient.js";
@@ -118,11 +120,9 @@ export async function vehicleRoutes(app: FastifyInstance) {
     return signedCommandFetch(`/vehicles/${id}/command/honk_horn`, token, { method: "POST" });
   });
 
-  // Tesla's Fleet API doesn't expose charging/driving history or Sentry clip
-  // metadata directly — that normally comes from a background poller that
-  // periodically snapshots vehicle_data and stores it. Left as stubs until
-  // that poller exists; the iOS app already falls back to mock data for
-  // these when a real vehicle has no history yet.
+  // Tesla's Fleet API doesn't expose charging/driving history directly —
+  // that would need a background poller snapshotting vehicle_data over
+  // time. Left as stubs; the iOS app falls back to mock data for these.
   app.get("/vehicles/:id/charging-sessions", async () => []);
   app.get("/vehicles/:id/driving-sessions", async () => []);
   app.get("/vehicles/:id/summary", async () => ({
@@ -132,4 +132,81 @@ export async function vehicleRoutes(app: FastifyInstance) {
     co2SavedKg: 0,
     averageEfficiencyWhPerKm: 0,
   }));
+
+  // Sentry timeline: populated by the Fleet Telemetry ingestor
+  // (src/telemetry/ingestor.js), not polled here — this just reads what's
+  // already in Postgres. Empty until a vehicle is subscribed (see below)
+  // and Fleet Telemetry is deployed (deploy/README.md).
+  app.get("/vehicles/:id/sentry-timeline", async (request) => {
+    const { id } = request.params as { id: string };
+    const entries = await prisma.sentryTimelineEntry.findMany({
+      where: { vin: id },
+      orderBy: { date: "desc" },
+      take: 200,
+    });
+    return entries.map((entry) => ({
+      id: entry.id,
+      date: entry.date.toISOString(),
+      kind: entry.kind,
+      activityDescription: entry.activityDescription,
+      awarenessLevel: entry.awarenessLevel,
+      // Not derivable from the SentryModeState signal alone — see
+      // deploy/README.md for what would be needed to populate this.
+      firedActions: [] as { label: string; systemImage: string }[],
+      isNew: entry.isNew,
+    }));
+  });
+
+  app.post("/vehicles/:id/sentry-timeline/mark-seen", async (request) => {
+    const { id } = request.params as { id: string };
+    await prisma.sentryTimelineEntry.updateMany({ where: { vin: id }, data: { isNew: false } });
+    return {};
+  });
+
+  app.delete("/vehicles/:id/sentry-timeline/:entryId", async (request) => {
+    const { entryId } = request.params as { id: string; entryId: string };
+    await prisma.sentryTimelineEntry.deleteMany({ where: { id: entryId } });
+    return {};
+  });
+
+  // One-time (per vehicle) subscription to Fleet Telemetry: tells the car
+  // to stream SentryMode state directly to our fleet-telemetry server.
+  // Requires FLEET_TELEMETRY_HOSTNAME to be configured and the server to
+  // already be reachable at that hostname with a valid certificate (see
+  // deploy/README.md) — Tesla validates this before accepting the
+  // subscription. Goes through tesla-http-proxy like commands do, since
+  // the config must be signed with the Vehicle Command private key
+  // (teslamotors/vehicle-command's proxy handles this at
+  // /api/1/vehicles/fleet_telemetry_config).
+  //
+  // ⚠️ This payload shape (hostname/port/ca/fields/alert_types/exp) is
+  // based on third-party documentation and teslamotors/vehicle-command's
+  // proxy source, not a first-hand verified call against developer.tesla.com
+  // (which wasn't reachable while writing this) — treat it as a strong
+  // starting point to test against a real vehicle, not a guarantee.
+  const telemetrySubscribeBody = z.object({ intervalSeconds: z.number().min(1).max(3600).default(10) });
+  app.post("/vehicles/:id/telemetry/subscribe", async (request, reply) => {
+    if (!env.FLEET_TELEMETRY_HOSTNAME) {
+      return reply.code(400).send({ error: "FLEET_TELEMETRY_HOSTNAME is not configured" });
+    }
+    const { id } = request.params as { id: string };
+    const { intervalSeconds } = telemetrySubscribeBody.parse(request.body ?? {});
+    const token = await getValidAccessToken(request.userId!);
+    const ca = env.FLEET_TELEMETRY_CA_FILE ? await readFile(env.FLEET_TELEMETRY_CA_FILE, "utf-8") : undefined;
+
+    return signedCommandFetch("/vehicles/fleet_telemetry_config", token, {
+      method: "POST",
+      body: JSON.stringify({
+        vins: [id],
+        config: {
+          hostname: env.FLEET_TELEMETRY_HOSTNAME,
+          port: env.FLEET_TELEMETRY_PORT,
+          ca,
+          fields: { SentryMode: { interval_seconds: intervalSeconds } },
+          alert_types: ["service"],
+          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+        },
+      }),
+    });
+  });
 }

@@ -27,6 +27,16 @@ const schema = z.object({
     .transform((value) => value === "true"),
   APP_REDIRECT_SCHEME: z.string().default("teslacompanion"),
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
+  // Fleet Telemetry ingestion (Sentry timeline). Optional: the backend runs
+  // fine without it, it just won't ingest real Sentry timeline data — see
+  // deploy/README.md.
+  REDIS_URL: z.string().optional(),
+  FLEET_TELEMETRY_NAMESPACE: z.string().default("tesla_telemetry"),
+  // Used only by the one-off tesla:register-vehicle-telemetry script, not by
+  // the running server.
+  FLEET_TELEMETRY_HOSTNAME: z.string().optional(),
+  FLEET_TELEMETRY_PORT: z.coerce.number().default(443),
+  FLEET_TELEMETRY_CA_FILE: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);

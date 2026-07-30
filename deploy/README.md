@@ -144,6 +144,102 @@ curl -i https://companion.jp-engineering.fr/health
 curl -i https://companion.jp-engineering.fr/.well-known/appspecific/com.tesla.3p.public-key.pem
 ```
 
+## 11. Fleet Telemetry (timeline Sentry réelle)
+
+Optionnel — sans ça, l'onglet Sentry affiche une liste vide (plus de mock,
+mais rien de réel tant que cette section n'est pas faite). Permet de
+recevoir en direct l'état Sentry (`SentryModeState` : Off/Idle/Armed/
+Aware/Panic) et la connectivité du véhicule, streamés par la voiture
+elle-même — voir la conversation précédente pour le détail des sources
+vérifiées (`teslamotors/fleet-telemetry`, `teslamotors/vehicle-command`).
+
+⚠️ Le format exact du payload d'abonnement (`POST
+/vehicles/:id/telemetry/subscribe`) est basé sur le code source de
+`tesla-http-proxy` et de la documentation tierce, pas vérifié de bout en
+bout contre un véhicule réel (la doc officielle bloquait mes requêtes
+automatisées pendant la rédaction). Test réel nécessaire à l'étape 11.7.
+
+**Important** : ce service fait du **mTLS en direct** — contrairement à
+`backend`, il ne peut **pas** passer par NPM (la terminaison TLS doit se
+faire directement dans le conteneur pour valider le certificat client du
+véhicule). Il lui faut son propre point d'entrée réseau.
+
+### 11.1 Sous-domaine dédié
+
+Créez un enregistrement DNS `A` pour `telemetry.jp-engineering.fr` (ou le
+nom choisi dans `FLEET_TELEMETRY_HOSTNAME`) — **distinct** du domaine
+principal, et qui ne doit **pas contenir "tesla"**. Même remarque que pour
+le domaine principal concernant l'IP dynamique (§2).
+
+### 11.2 Configuration
+
+Complétez dans `.env` : `FLEET_TELEMETRY_STATIC_IP` (IP macvlan dédiée),
+`FLEET_TELEMETRY_HOSTNAME`, `FLEET_TELEMETRY_CA_FILE` (garder en cohérence
+avec le hostname), `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`
+(permissions Route 53 uniquement, comme pour `update-route53-ip.sh`),
+`LETSENCRYPT_EMAIL`.
+
+Dans `deploy/fleet-telemetry-config.json`, remplacez les deux occurrences
+de `REPLACE_WITH_FLEET_TELEMETRY_HOSTNAME` par votre hostname exact.
+
+### 11.3 Certificat (DNS-01 via Route 53)
+
+```bash
+docker compose run --rm certbot
+```
+
+Ne fait pas partie de `docker compose up` — à relancer manuellement avant
+expiration (~90 jours), ou planifiez via cron :
+```bash
+docker compose run --rm certbot renew
+```
+
+### 11.4 Routeur
+
+Redirigez un port de votre choix (ex. 443, ou un autre si déjà pris par
+NPM sur l'IP du NAS — ici ça n'entre pas en conflit puisque
+`fleet-telemetry` a sa propre IP macvlan) vers
+`<FLEET_TELEMETRY_STATIC_IP>:443`.
+
+### 11.5 Lancer
+
+```bash
+docker compose up -d redis fleet-telemetry
+docker compose logs fleet-telemetry --tail 30
+```
+
+### 11.6 Migration de la base
+
+```bash
+docker compose exec backend npm run prisma:deploy
+```
+
+### 11.7 Abonner un véhicule
+
+Depuis l'app iOS, récupérez votre token de session (ou utilisez un outil
+comme Charles Proxy / les logs backend), puis :
+
+```bash
+curl -X POST https://companion.jp-engineering.fr/vehicles/<VIN>/telemetry/subscribe \
+  -H "Authorization: Bearer <votre JWT app>" \
+  -H "Content-Type: application/json" \
+  -d '{"intervalSeconds": 10}'
+```
+
+Si Tesla renvoie une erreur ici, c'est le signal que le format du payload
+(§ ci-dessus) doit être ajusté — la réponse d'erreur de Tesla est
+généralement explicite sur le champ en cause.
+
+### 11.8 Vérifier
+
+```bash
+docker compose logs backend --tail 30 | grep -i telemetry
+```
+
+Puis, dans l'app iOS, l'onglet Sentry devrait commencer à recevoir de
+vraies entrées à la prochaine transition d'état Sentry (activer/désactiver
+Sentry Mode depuis l'app Tesla officielle pour tester rapidement).
+
 ## Mises à jour
 
 ```bash

@@ -18,13 +18,17 @@ enum SentryTimelineKind: String, Codable {
     }
 }
 
+/// Mirrors Tesla's real `SentryModeState` values (protos/vehicle_data.proto
+/// in teslamotors/fleet-telemetry) for the two states worth surfacing as an
+/// activity: Aware (something nearby, cameras watching closely) and Panic
+/// (a security event — alarm/lights triggered). Off/Idle/Armed/Quiet map to
+/// plain enabled/disabled transitions instead, not an activity entry.
 enum SentryAwarenessLevel: String, Codable {
-    case aware, alert, panic
+    case aware, panic
 
     var label: String {
         switch self {
         case .aware: "Aware"
-        case .alert: "Alert"
         case .panic: "Panic"
         }
     }

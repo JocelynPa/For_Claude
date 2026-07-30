@@ -24,3 +24,19 @@ model TeslaCredential {
   expiresAt    DateTime
   updatedAt    DateTime @updatedAt
 }
+
+// Populated by the Fleet Telemetry ingestor (src/telemetry/ingestor.ts),
+// which subscribes to the SentryModeState and connectivity signals streamed
+// directly from the vehicle — not polled. See deploy/README.md.
+model SentryTimelineEntry {
+  id                  String   @id @default(uuid())
+  vin                 String
+  date                DateTime
+  kind                String // vehicleOnline | vehicleOffline | sentryModeEnabled | sentryModeDisabled | activityDetected
+  activityDescription String?
+  awarenessLevel      String? // aware | panic — only set when kind == activityDetected
+  isNew               Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  @@index([vin, date])
+}
