@@ -9,6 +9,9 @@ struct TeslaCompanionApp: App {
             RootView()
                 .environmentObject(environment)
                 .environmentObject(environment.auth)
+                // Dark-only by design — a premium, cockpit-style look
+                // rather than following the system appearance.
+                .preferredColorScheme(.dark)
         }
     }
 }

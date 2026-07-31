@@ -11,6 +11,11 @@ final class MockVehicleService: VehicleServicing {
         vin: "5YJ3E1EA0PF000000",
         model: "Model 3 Performance",
         color: "Blanc Nacré",
+        // Same compositor endpoint the backend builds for real vehicles
+        // (see backend/src/services/teslaVehicleImage.ts) — a minimal,
+        // valid Model 3 render, so Previews/Simulator show a real vehicle
+        // image rather than a blank space.
+        imageUrl: URL(string: "https://static-assets.tesla.com/configurator/compositor?bkba_opt=2&file_type=jpg&model=m3&options=IN3PB&view=STUD_3QTR&size=800"),
         state: .online,
         battery: ChargeState(
             batteryLevel: 78,

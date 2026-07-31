@@ -1,3 +1,5 @@
+import { buildVehicleImageUrl } from "./teslaVehicleImage.js";
+
 // Shapes returned by Tesla's Fleet API (subset of fields we actually use).
 export interface TeslaVehicleListItem {
   id: number;
@@ -26,6 +28,7 @@ export interface TeslaVehicleData {
     car_type: string;
     exterior_color: string | null;
   };
+  option_codes?: string;
 }
 
 const CAR_TYPE_LABELS: Record<string, string> = {
@@ -59,6 +62,7 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
     vin: list.vin,
     model: data ? (CAR_TYPE_LABELS[data.vehicle_config.car_type] ?? data.vehicle_config.car_type) : "Tesla",
     color: data?.vehicle_config.exterior_color ?? "—",
+    imageUrl: data ? buildVehicleImageUrl(data.vehicle_config.car_type, data.option_codes) : null,
     state: list.state === "online" ? "online" : list.state === "asleep" ? "asleep" : "offline",
     battery: {
       batteryLevel: data?.charge_state.battery_level ?? 0,

@@ -16,12 +16,12 @@ struct QuickActionButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.md)
-            .foregroundStyle(isActive ? Color.white : AppTheme.Colors.textPrimary)
-            .background(isActive ? AppTheme.Colors.accent : AppTheme.Colors.surface)
+            .foregroundStyle(isActive ? AppTheme.Colors.background : AppTheme.Colors.textPrimary)
+            .background(isActive ? AppTheme.Colors.accent : AppTheme.Colors.surfaceElevated)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .stroke(AppTheme.Colors.border, lineWidth: isActive ? 0 : 1)
+                    .stroke(isActive ? .clear : AppTheme.Colors.hairline, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
