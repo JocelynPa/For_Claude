@@ -4,7 +4,8 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { prisma } from "../db/prisma.js";
 import { authenticate } from "../middleware/authenticate.js";
-import { fleetApiFetch, signedCommandFetch, refreshAccessToken } from "../services/teslaClient.js";
+import { fleetApiFetch, signedCommandFetch } from "../services/teslaClient.js";
+import { getValidAccessToken } from "../services/tokenStore.js";
 import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } from "../services/teslaMapper.js";
 
 // `vehicle_data` fails while the car is asleep. Try once, wake it up on
@@ -23,23 +24,6 @@ async function fetchVehicleDataWithWake(id: string, token: string): Promise<Tesl
       return null;
     }
   }
-}
-
-async function getValidAccessToken(userId: string): Promise<string> {
-  const credential = await prisma.teslaCredential.findUniqueOrThrow({ where: { userId } });
-  if (credential.expiresAt.getTime() > Date.now() + 60_000) {
-    return credential.accessToken;
-  }
-  const refreshed = await refreshAccessToken(credential.refreshToken);
-  await prisma.teslaCredential.update({
-    where: { userId },
-    data: {
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token,
-      expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-    },
-  });
-  return refreshed.access_token;
 }
 
 export async function vehicleRoutes(app: FastifyInstance) {
@@ -118,6 +102,17 @@ export async function vehicleRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const token = await getValidAccessToken(request.userId!);
     return signedCommandFetch(`/vehicles/${id}/command/honk_horn`, token, { method: "POST" });
+  });
+
+  const setSentryModeBody = z.object({ on: z.boolean() });
+  app.post("/vehicles/:id/command/set-sentry-mode", async (request) => {
+    const { id } = request.params as { id: string };
+    const { on } = setSentryModeBody.parse(request.body);
+    const token = await getValidAccessToken(request.userId!);
+    return signedCommandFetch(`/vehicles/${id}/command/set_sentry_mode`, token, {
+      method: "POST",
+      body: JSON.stringify({ on }),
+    });
   });
 
   // Tesla's Fleet API doesn't expose charging/driving history directly —

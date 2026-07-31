@@ -56,14 +56,20 @@ compilation.
 - **Statistiques** : résumé mensuel (distance, coût, CO₂ évité), graphique
   d'efficacité (Swift Charts), historique de charge
 - **Sentry Mode** : statut actif/inactif (pastille rouge animée, données
-  réelles via `vehicle_state.sentry_mode`), journal d'activité en timeline
-  (transitions en ligne/hors ligne, Sentry activé/désactivé, activité
-  détectée avec niveau Aware/Panic) — texte uniquement, pas d'image ni de
-  vidéo. Alimentable en données réelles via **Tesla Fleet Telemetry** (le
-  véhicule streame directement son état, voir `deploy/README.md` §11) —
-  non activé par défaut, l'onglet est vide tant que ce n'est pas configuré
+  réelles via `vehicle_state.sentry_mode`) avec bascule pour
+  activer/désactiver directement depuis l'app, journal d'activité en
+  timeline (transitions en ligne/hors ligne, Sentry activé/désactivé,
+  activité détectée avec niveau Aware/Panic) — texte uniquement, pas
+  d'image ni de vidéo. Alimentable en données réelles via **Tesla Fleet
+  Telemetry** (le véhicule streame directement son état, voir
+  `deploy/README.md` §11) — non activé par défaut, l'onglet est vide tant
+  que ce n'est pas configuré
+- **Notifications push** (APNs) à chaque activité détectée, et **action
+  automatique** configurable (klaxon, phares, verrouillage, ou aucune)
+  déclenchée côté serveur — fonctionne même app fermée. Voir
+  `deploy/README.md` §12/§13
 - **Paywall** premium (plans mensuel/annuel) et **Réglages** (notifications,
-  déconnexion)
+  action Sentry automatique, déconnexion)
 
 ### Ce qui reste à faire pour une v1 réelle
 
@@ -72,11 +78,16 @@ compilation.
   (Tesla ne fournit pas cet historique nativement, cf.
   `backend/src/routes/vehicles.ts`)
 - La timeline Sentry a sa propre voie réelle (Fleet Telemetry, voir
-  `deploy/README.md` §11) mais reste non déployée par défaut ; l'action
-  déclenchée (ex. klaxon) associée à une détection n'est en revanche pas
-  disponible via ce signal seul — nécessiterait en plus de lire les
-  métadonnées `event.json` sur la clé USB du véhicule (hors périmètre pour
-  l'instant)
+  `deploy/README.md` §11) mais reste non déployée par défaut ; le champ
+  `firedActions` de chaque entrée (ce que **Tesla lui-même** a déclenché,
+  ex. alarme native) reste toujours vide — nécessiterait de lire les
+  métadonnées `event.json` sur la clé USB du véhicule, hors périmètre pour
+  l'instant. Ne pas confondre avec l'action automatique **de l'app**
+  (§13 de `deploy/README.md`, ex. klaxon/phares/verrouillage), qui elle
+  fonctionne déjà via le même signal Fleet Telemetry
+- Le son "pet" (`remote_boombox`) n'est pas proposé comme action —
+  `tesla-http-proxy` (le proxy de signature dont dépendent toutes les
+  commandes signées) le marque explicitement non implémenté
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Icône d'app, écran de lancement personnalisé, tests

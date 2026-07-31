@@ -5,13 +5,18 @@ struct SentryHomeView: View {
     @State private var vehicle: Vehicle?
     @State private var events: [SentryTimelineEntry] = []
     @State private var isLoading = true
+    @State private var isTogglingSentry = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    if let vehicle {
-                        SentryStatusBanner(isActive: vehicle.isSentryModeActive)
+                    if vehicle != nil {
+                        SentryStatusBanner(isActive: sentryModeBinding.wrappedValue)
+                        Toggle("Activer Sentry Mode", isOn: sentryModeBinding)
+                            .tint(AppTheme.Colors.accent)
+                            .disabled(isTogglingSentry)
+                            .padding(.horizontal, AppSpacing.xs)
                     }
 
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -62,5 +67,21 @@ struct SentryHomeView: View {
         guard let vehicleId = vehicle?.id else { return }
         try? await environment.sentryService.markAllSeen(vehicleId: vehicleId)
         events = events.map { var event = $0; event.isNew = false; return event }
+    }
+
+    private var sentryModeBinding: Binding<Bool> {
+        Binding(
+            get: { vehicle?.isSentryModeActive ?? false },
+            set: { newValue in Task { await setSentryMode(newValue) } }
+        )
+    }
+
+    private func setSentryMode(_ on: Bool) async {
+        guard let vehicleId = vehicle?.id else { return }
+        isTogglingSentry = true
+        defer { isTogglingSentry = false }
+        if (try? await environment.vehicleService.setSentryMode(vehicleId, on: on)) != nil {
+            vehicle?.isSentryModeActive = on
+        }
     }
 }

@@ -67,6 +67,14 @@ final class TeslaAPIService: VehicleServicing {
         ) as EmptyResponse
     }
 
+    func setSentryMode(_ vehicleId: String, on: Bool) async throws {
+        let body = try JSONEncoder().encode(["on": on])
+        try await client.send(
+            Endpoint(path: "vehicles/\(vehicleId)/command/set-sentry-mode", method: "POST", body: body),
+            authToken: auth.accessToken
+        ) as EmptyResponse
+    }
+
     func fetchChargingSessions(vehicleId: String) async throws -> [ChargingSession] {
         try await client.send(Endpoint(path: "vehicles/\(vehicleId)/charging-sessions"), authToken: auth.accessToken)
     }

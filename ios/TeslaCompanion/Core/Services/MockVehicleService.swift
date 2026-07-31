@@ -57,6 +57,10 @@ final class MockVehicleService: VehicleServicing {
 
     func honkHorn(_ vehicleId: String) async throws {}
 
+    func setSentryMode(_ vehicleId: String, on: Bool) async throws {
+        vehicle.isSentryModeActive = on
+    }
+
     func fetchChargingSessions(vehicleId: String) async throws -> [ChargingSession] {
         let calendar = Calendar.current
         return (0..<6).map { offset in
