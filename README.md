@@ -64,10 +64,9 @@ compilation.
   Telemetry** (le véhicule streame directement son état, voir
   `deploy/README.md` §11) — non activé par défaut, l'onglet est vide tant
   que ce n'est pas configuré
-- **Notifications push** (APNs) à chaque activité détectée, et **action
-  automatique** configurable (klaxon, phares, verrouillage, ou aucune)
-  déclenchée côté serveur — fonctionne même app fermée. Voir
-  `deploy/README.md` §12/§13
+- **Action automatique** configurable (klaxon, phares, verrouillage, ou
+  aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
+  même app fermée. Voir `deploy/README.md` §12
 - **Paywall** premium (plans mensuel/annuel) et **Réglages** (notifications,
   action Sentry automatique, déconnexion)
 
@@ -83,11 +82,15 @@ compilation.
   ex. alarme native) reste toujours vide — nécessiterait de lire les
   métadonnées `event.json` sur la clé USB du véhicule, hors périmètre pour
   l'instant. Ne pas confondre avec l'action automatique **de l'app**
-  (§13 de `deploy/README.md`, ex. klaxon/phares/verrouillage), qui elle
+  (§12 de `deploy/README.md`, ex. klaxon/phares/verrouillage), qui elle
   fonctionne déjà via le même signal Fleet Telemetry
 - Le son "pet" (`remote_boombox`) n'est pas proposé comme action —
   `tesla-http-proxy` (le proxy de signature dont dépendent toutes les
   commandes signées) le marque explicitement non implémenté
+- Notifications push (APNs) retirées temporairement (config Apple
+  Developer non disponible pour l'instant) — le code existait
+  (`backend/src/services/push.ts`, `PushNotificationManager`), voir
+  l'historique git pour le réintroduire
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Icône d'app, écran de lancement personnalisé, tests
