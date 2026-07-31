@@ -1,6 +1,9 @@
 import { createClient } from "redis";
 import { env } from "../config/env.js";
 import { prisma } from "../db/prisma.js";
+import { signedCommandFetch } from "../services/teslaClient.js";
+import { getValidAccessToken } from "../services/tokenStore.js";
+import { sendPushNotification } from "../services/push.js";
 
 // Shapes match the protobuf-JSON encoding fleet-telemetry emits on Redis
 // when `transmit_decoded_records: true` (protojson.Marshal on
@@ -50,6 +53,34 @@ function isEnabledState(state: string): boolean {
 const lastSentryState = new Map<string, string>();
 const lastConnectivity = new Map<string, string>();
 
+const AUTO_ACTION_COMMANDS: Record<string, string> = {
+  honk: "honk_horn",
+  flash: "flash_lights",
+  lock: "door_lock",
+};
+
+// This is a single-user, single-vehicle-account app — there's no vin-to-user
+// mapping in the schema (TeslaCredential is keyed by userId only), so "the"
+// account is just whichever User row exists. Fine here; would need real
+// mapping if this ever grew multi-tenant.
+async function notifyAndActOnActivity(vin: string, description: string): Promise<void> {
+  const user = await prisma.user.findFirst();
+  if (!user) return;
+
+  if (user.pushToken) {
+    await sendPushNotification(user.pushToken, "Sentry Mode", description);
+  }
+
+  const command = AUTO_ACTION_COMMANDS[user.sentryAutoAction];
+  if (!command) return;
+  try {
+    const token = await getValidAccessToken(user.id);
+    await signedCommandFetch(`/vehicles/${vin}/command/${command}`, token, { method: "POST" });
+  } catch (error) {
+    console.error(`Failed to fire auto-action "${user.sentryAutoAction}" for ${vin}`, error);
+  }
+}
+
 async function handleVehicleDataMessage(raw: string): Promise<void> {
   const payload = JSON.parse(raw) as VehicleDataRecord;
   const datum = payload.data?.find((entry) => entry.key === "SentryMode");
@@ -71,6 +102,7 @@ async function handleVehicleDataMessage(raw: string): Promise<void> {
         awarenessLevel: activity.level,
       },
     });
+    await notifyAndActOnActivity(payload.vin, activity.description);
     return;
   }
 
