@@ -1,33 +1,48 @@
 import SwiftUI
 
-/// Central design tokens for the app: a sober, editorial palette (graphite,
-/// off-white, restrained indigo accent) that adapts to light and dark mode,
-/// rather than reproducing Tesla's own red-on-black branding.
+/// Central design tokens for the app: a premium, dark-only palette —
+/// deep anthracite, warm off-white, a restrained champagne-gold accent —
+/// closer to the cockpit feel of the official Tesla app than a generic
+/// iOS app that happens to support dark mode. See `TeslaCompanionApp`
+/// for where dark mode is forced app-wide.
 enum AppTheme {
     enum Colors {
-        static let background = Color(light: 0xF5F5F7, dark: 0x0A0A0B)
-        static let surface = Color(light: 0xFFFFFF, dark: 0x151517)
-        static let surfaceElevated = Color(light: 0xFFFFFF, dark: 0x1E1E21)
-        static let border = Color(light: 0xE3E3E6, dark: 0x2A2A2E)
+        static let background = Color(hex: 0x0A0A0C)
+        static let surface = Color(hex: 0x141416)
+        static let surfaceElevated = Color(hex: 0x1C1C1F)
+        static let border = Color(hex: 0x2A2A2E)
+        /// Faint hairline used on top of colored/image surfaces for a
+        /// glass-edge highlight — not a flat color swap like `border`.
+        static let hairline = Color.white.opacity(0.08)
 
-        static let textPrimary = Color(light: 0x111113, dark: 0xF5F5F7)
-        static let textSecondary = Color(light: 0x6B6B70, dark: 0x9A9AA0)
+        static let textPrimary = Color(hex: 0xF5F3EE)
+        static let textSecondary = Color(hex: 0x9B9BA2)
 
-        static let accent = Color(light: 0x2F55D4, dark: 0x7C93FF)
-        static let success = Color(light: 0x1F9254, dark: 0x34D399)
-        static let warning = Color(light: 0xB7791F, dark: 0xF5B84C)
-        static let danger = Color(light: 0xC53030, dark: 0xFF6B6B)
+        /// Champagne gold — the app's one signature accent, used sparingly
+        /// (progress fills, links, active states) rather than Tesla's own
+        /// red, which stays reserved for Sentry/alerts below.
+        static let accent = Color(hex: 0xC9A66B)
+        static let success = Color(hex: 0x34D399)
+        static let warning = Color(hex: 0xF5B84C)
+        /// Tesla's own brand red — used only for Sentry/alert states, so it
+        /// keeps its meaning as "something needs attention," not decoration.
+        static let danger = Color(hex: 0xE31937)
     }
 }
 
 enum AppFont {
-    static func largeTitle() -> Font { .system(size: 32, weight: .bold) }
+    static func largeTitle() -> Font { .system(size: 32, weight: .bold, design: .serif) }
     static func title() -> Font { .system(size: 20, weight: .semibold) }
     static func headline() -> Font { .system(size: 16, weight: .semibold) }
     static func body() -> Font { .system(size: 15, weight: .regular) }
     static func caption() -> Font { .system(size: 12, weight: .medium) }
-    static func statValue() -> Font { .system(size: 26, weight: .bold, design: .rounded) }
+    /// Serif, used only for hero numbers (battery %, range, stats) — a
+    /// deliberate, sparing touch of editorial/instrument-cluster elegance
+    /// against the sans-serif body copy everywhere else.
+    static func statValue() -> Font { .system(size: 28, weight: .semibold, design: .serif) }
     static func statLabel() -> Font { .system(size: 11, weight: .semibold, design: .rounded) }
+    /// Small uppercase "eyebrow" label above a section title.
+    static func overline() -> Font { .system(size: 11, weight: .semibold, design: .rounded) }
 }
 
 enum AppSpacing {
@@ -39,8 +54,8 @@ enum AppSpacing {
 }
 
 enum AppRadius {
-    static let sm: CGFloat = 8
-    static let md: CGFloat = 14
-    static let lg: CGFloat = 20
+    static let sm: CGFloat = 10
+    static let md: CGFloat = 16
+    static let lg: CGFloat = 26
     static let pill: CGFloat = 999
 }

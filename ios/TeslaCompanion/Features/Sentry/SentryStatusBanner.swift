@@ -35,11 +35,20 @@ struct SentryStatusBanner: View {
                         .fill(AppTheme.Colors.textSecondary.opacity(0.4))
                         .frame(width: 8, height: 8)
                 }
-                Text(isActive ? "Sentry Mode actif" : "Sentry Mode inactif")
-                    .font(AppFont.headline())
-                    .foregroundStyle(AppTheme.Colors.textPrimary)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(isActive ? "Sentry Mode actif" : "Sentry Mode inactif")
+                        .font(AppFont.headline())
+                        .foregroundStyle(AppTheme.Colors.textPrimary)
+                    Text(isActive ? "Le véhicule surveille ses abords" : "La surveillance est désactivée")
+                        .font(AppFont.caption())
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                }
                 Spacer()
             }
         }
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .fill(isActive ? AppTheme.Colors.danger.opacity(0.06) : .clear)
+        )
     }
 }

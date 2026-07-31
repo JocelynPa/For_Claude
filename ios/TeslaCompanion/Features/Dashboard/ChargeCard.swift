@@ -38,7 +38,13 @@ struct ChargeCard: View {
                         RoundedRectangle(cornerRadius: AppRadius.sm)
                             .fill(AppTheme.Colors.border)
                         RoundedRectangle(cornerRadius: AppRadius.sm)
-                            .fill(AppTheme.Colors.accent)
+                            .fill(
+                                LinearGradient(
+                                    colors: [AppTheme.Colors.accent.opacity(0.75), AppTheme.Colors.accent],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .frame(width: proxy.size.width * CGFloat(charge.batteryLevel) / 100)
                     }
                 }

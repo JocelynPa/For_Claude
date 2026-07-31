@@ -17,12 +17,14 @@ struct EventTimelineView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack {
                         Text(Self.dayLabel(for: group.day))
-                        Spacer()
+                        Rectangle()
+                            .fill(AppTheme.Colors.border)
+                            .frame(height: 1)
                         Text(group.day.formatted(.dateTime.day().month(.abbreviated)))
                     }
-                    .font(AppFont.caption())
+                    .font(AppFont.overline())
                     .foregroundStyle(AppTheme.Colors.textSecondary)
-                    .tracking(0.5)
+                    .tracking(1)
                     .textCase(.uppercase)
 
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -80,14 +82,20 @@ private struct StateChangeRow: View {
 private struct ActivityDetectedCard: View {
     let entry: SentryTimelineEntry
 
+    /// Panic is Tesla's own escalated alert state — worth the same red used
+    /// for the Sentry pulse elsewhere, not just another amber notice.
+    private var tint: Color {
+        entry.awarenessLevel == .panic ? AppTheme.Colors.danger : AppTheme.Colors.warning
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 ZStack {
                     RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(AppTheme.Colors.warning.opacity(0.18))
-                    Image(systemName: "eye.fill")
-                        .foregroundStyle(AppTheme.Colors.warning)
+                        .fill(tint.opacity(0.18))
+                    Image(systemName: entry.awarenessLevel == .panic ? "exclamationmark.triangle.fill" : "eye.fill")
+                        .foregroundStyle(tint)
                 }
                 .frame(width: 40, height: 40)
 
@@ -111,7 +119,7 @@ private struct ActivityDetectedCard: View {
             .padding(AppSpacing.md)
 
             if !entry.firedActions.isEmpty {
-                Divider().overlay(AppTheme.Colors.warning.opacity(0.25))
+                Divider().overlay(tint.opacity(0.25))
 
                 HStack(spacing: AppSpacing.sm) {
                     Text("DÉCLENCHÉ")
@@ -124,10 +132,10 @@ private struct ActivityDetectedCard: View {
                         }
                         .font(AppFont.caption())
                         .fontWeight(.semibold)
-                        .foregroundStyle(AppTheme.Colors.warning)
+                        .foregroundStyle(tint)
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, 4)
-                        .background(AppTheme.Colors.warning.opacity(0.16))
+                        .background(tint.opacity(0.16))
                         .clipShape(Capsule())
                     }
                     Spacer()
@@ -136,11 +144,11 @@ private struct ActivityDetectedCard: View {
                 .padding(.vertical, AppSpacing.sm)
             }
         }
-        .background(AppTheme.Colors.warning.opacity(0.08))
+        .background(tint.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .stroke(AppTheme.Colors.warning.opacity(0.3), lineWidth: 1)
+                .stroke(tint.opacity(0.3), lineWidth: 1)
         )
     }
 }

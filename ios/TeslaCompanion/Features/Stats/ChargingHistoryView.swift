@@ -30,8 +30,20 @@ struct ChargingHistoryView: View {
 private struct ChargingSessionRow: View {
     let session: ChargingSession
 
+    private var isSupercharger: Bool {
+        session.location.localizedCaseInsensitiveContains("supercharger")
+    }
+
     var body: some View {
-        HStack {
+        HStack(spacing: AppSpacing.sm) {
+            ZStack {
+                Circle().fill(AppTheme.Colors.accent.opacity(0.14))
+                Image(systemName: isSupercharger ? "bolt.fill" : "house.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppTheme.Colors.accent)
+            }
+            .frame(width: 32, height: 32)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.location)
                     .font(AppFont.body())

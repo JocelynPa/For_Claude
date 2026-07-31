@@ -2,8 +2,11 @@
 
 App iOS native (SwiftUI) qui réunit le contrôle véhicule et les statistiques
 façon **TezLab**, et un journal d'activité Sentry façon **Sentry Mode Pro**,
-dans une interface sobre et élégante (palette graphite/blanc cassé, accent
-indigo discret, dark mode adaptatif).
+dans une interface premium **dark-only** (anthracite profond, accent
+champagne gold, rouge Tesla réservé aux alertes Sentry) proche du cockpit de
+l'app Tesla officielle. Le véhicule affiché est le rendu réel de la voiture
+du propriétaire (modèle, couleur, jantes) via l'API compositeur d'images de
+Tesla, pas une icône générique.
 
 > Ce dépôt repart de zéro : un précédent scaffold en Expo/React Native a été
 > retiré. Cette version est un vrai projet iOS natif.
@@ -51,8 +54,11 @@ compilation.
 ### Fonctionnalités couvertes (v1)
 
 - **Connexion Tesla** via `ASWebAuthenticationSession` (OAuth géré par le backend)
-- **Dashboard véhicule** : batterie/autonomie, verrouillage, climatisation
-  (avec réglage de consigne), phares, klaxon, limite de charge
+- **Dashboard véhicule** : rendu réel du véhicule (modèle/couleur/jantes,
+  via l'API compositeur d'images Tesla — non-officielle mais publique,
+  utilisée par TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`),
+  batterie/autonomie, verrouillage, climatisation (avec réglage de
+  consigne), phares, klaxon, limite de charge
 - **Statistiques** : résumé mensuel (distance, coût, CO₂ évité), graphique
   d'efficacité (Swift Charts), historique de charge
 - **Sentry Mode** : statut actif/inactif (pastille rouge animée, données

@@ -21,10 +21,12 @@ struct PillBadge: View {
     var body: some View {
         Text(text)
             .font(AppFont.caption())
+            .fontWeight(.semibold)
             .foregroundStyle(style.color)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 4)
-            .background(style.color.opacity(0.12))
+            .padding(.horizontal, AppSpacing.sm + 2)
+            .padding(.vertical, 5)
+            .background(style.color.opacity(0.14))
+            .overlay(Capsule().stroke(style.color.opacity(0.3), lineWidth: 1))
             .clipShape(Capsule())
     }
 }
