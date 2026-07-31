@@ -211,4 +211,20 @@ export async function vehicleRoutes(app: FastifyInstance) {
       }),
     });
   });
+
+  // Diagnostic: Tesla's own record of whether the vehicle has actually
+  // fetched and applied the config from /telemetry/subscribe ("synced":
+  // true/false), plus any errors it hit trying to connect. Plain Bearer
+  // GETs, no signing needed — unlike the subscribe call above.
+  app.get("/vehicles/:id/telemetry/status", async (request) => {
+    const { id } = request.params as { id: string };
+    const token = await getValidAccessToken(request.userId!);
+    return fleetApiFetch(`/vehicles/${id}/fleet_telemetry_config`, token);
+  });
+
+  app.get("/vehicles/:id/telemetry/errors", async (request) => {
+    const { id } = request.params as { id: string };
+    const token = await getValidAccessToken(request.userId!);
+    return fleetApiFetch(`/vehicles/${id}/fleet_telemetry_errors`, token);
+  });
 }

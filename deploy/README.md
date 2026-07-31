@@ -230,6 +230,30 @@ Si Tesla renvoie une erreur ici, c'est le signal que le format du payload
 (§ ci-dessus) doit être ajusté — la réponse d'erreur de Tesla est
 généralement explicite sur le champ en cause.
 
+⚠️ Nécessite un firmware véhicule **2023.20.6 ou supérieur** (certains
+Model S/X plus anciens ne sont pas compatibles) — voir le README de
+`teslamotors/fleet-telemetry`.
+
+Une réponse `{"updated_vehicles":1}` confirme seulement que **Tesla a
+accepté la demande** — pas que le véhicule a effectivement récupéré la
+config ni ouvert la connexion. Vérifiez l'état réel avant de conclure à
+un échec :
+
+```bash
+curl -s https://companion.jp-engineering.fr/vehicles/<VIN>/telemetry/status \
+  -H "Authorization: Bearer <votre JWT app>" | jq
+```
+
+`"synced": true` confirme que le véhicule a bien récupéré et appliqué la
+config. Si `synced` reste `false` après plusieurs minutes (le véhicule
+doit être éveillé et en ligne pour synchroniser), ou si des erreurs sont
+remontées, interrogez :
+
+```bash
+curl -s https://companion.jp-engineering.fr/vehicles/<VIN>/telemetry/errors \
+  -H "Authorization: Bearer <votre JWT app>" | jq
+```
+
 ### 11.8 Vérifier
 
 ```bash
