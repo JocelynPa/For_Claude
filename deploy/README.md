@@ -164,6 +164,16 @@ automatisées pendant la rédaction). Test réel nécessaire à l'étape 11.7.
 faire directement dans le conteneur pour valider le certificat client du
 véhicule). Il lui faut son propre point d'entrée réseau.
 
+⚠️ **Ne créez surtout pas de Proxy Host NPM pour ce sous-domaine**, même
+par réflexe (sur le modèle de `companion.jp-engineering.fr`). NPM
+terminerait le TLS avec son propre certificat puis relaierait vers
+`fleet-telemetry` en HTTP simple par défaut — ce qui casse le mTLS sans
+erreur explicite côté NPM, et produit côté `fleet-telemetry` des
+`http: TLS handshake error ...: client sent an HTTP request to an HTTPS
+server` en boucle. La redirection doit passer **uniquement** par la
+règle de port du routeur/firewall (§11.4), directement vers
+`<FLEET_TELEMETRY_STATIC_IP>`.
+
 ### 11.1 Sous-domaine dédié
 
 Créez un enregistrement DNS `A` pour `telemetry.jp-engineering.fr` (ou le
