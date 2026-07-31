@@ -3,8 +3,10 @@ import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
+    @EnvironmentObject private var environment: AppEnvironment
     @State private var showPaywall = false
     @State private var tokenCopied = false
+    @State private var sentryAutoAction: SentryAutoAction = .none
     @AppStorage("sentry_notifications_enabled") private var sentryNotifications = true
     @AppStorage("driving_reports_enabled") private var drivingReports = true
 
@@ -26,9 +28,26 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Notifications") {
+                Section {
                     Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
+                        .onChange(of: sentryNotifications) { _, isOn in
+                            if isOn { environment.pushManager.requestAuthorizationIfEnabled() }
+                        }
                     Toggle("Rapports de conduite", isOn: $drivingReports)
+                } header: {
+                    Text("Notifications")
+                }
+
+                Section {
+                    Picker("Action automatique", selection: sentryAutoActionBinding) {
+                        ForEach(SentryAutoAction.allCases, id: \.self) { action in
+                            Text(action.label).tag(action)
+                        }
+                    }
+                } header: {
+                    Text("Sentry Mode")
+                } footer: {
+                    Text("Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée.")
                 }
 
                 Section {
@@ -90,6 +109,11 @@ struct SettingsView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
+            .task {
+                if let settings = try? await environment.settingsService.fetchSettings() {
+                    sentryAutoAction = settings.sentryAutoAction
+                }
+            }
         }
     }
 
@@ -99,5 +123,15 @@ struct SettingsView: View {
     private var addVirtualKeyURL: URL? {
         guard let host = URL(string: AppConfig.apiBaseURL)?.host else { return nil }
         return URL(string: "https://tesla.com/_ak/\(host)")
+    }
+
+    private var sentryAutoActionBinding: Binding<SentryAutoAction> {
+        Binding(
+            get: { sentryAutoAction },
+            set: { newValue in
+                sentryAutoAction = newValue
+                Task { try? await environment.settingsService.setSentryAutoAction(newValue) }
+            }
+        )
     }
 }

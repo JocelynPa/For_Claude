@@ -9,17 +9,21 @@ final class AppEnvironment: ObservableObject {
     let auth: AuthManager
     let vehicleService: VehicleServicing
     let sentryService: SentryServicing
+    let settingsService: SettingsServicing
+    let pushManager: PushNotificationManager
 
     init(
         auth: AuthManager? = nil,
         vehicleService: VehicleServicing? = nil,
-        sentryService: SentryServicing? = nil
+        sentryService: SentryServicing? = nil,
+        settingsService: SettingsServicing? = nil
     ) {
-        // `auth`/`vehicleService`/`sentryService` default to nil rather than
-        // being constructed directly: default parameter values are evaluated
-        // in a nonisolated context, and their initializers (or dependencies)
-        // are @MainActor-isolated. Constructing them here, inside the body
-        // of this @MainActor init, is isolated correctly.
+        // `auth`/`vehicleService`/`sentryService`/`settingsService` default to
+        // nil rather than being constructed directly: default parameter
+        // values are evaluated in a nonisolated context, and their
+        // initializers (or dependencies) are @MainActor-isolated.
+        // Constructing them here, inside the body of this @MainActor init,
+        // is isolated correctly.
         let resolvedAuth = auth ?? AuthManager()
         self.auth = resolvedAuth
         // Real backend by default now that it's configured; pass an explicit
@@ -31,5 +35,7 @@ final class AppEnvironment: ObservableObject {
         // then this real service just returns an empty list, which is more
         // honest than showing demo data that looks real.
         self.sentryService = sentryService ?? TeslaSentryService(auth: resolvedAuth)
+        self.settingsService = settingsService ?? TeslaSettingsService(auth: resolvedAuth)
+        self.pushManager = PushNotificationManager(auth: resolvedAuth)
     }
 }

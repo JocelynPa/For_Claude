@@ -12,6 +12,13 @@ model User {
   teslaSubject       String?          @unique
   email              String           @unique
   subscriptionStatus String           @default("free")
+  // Fired automatically by the Fleet Telemetry ingestor when it records an
+  // "activityDetected" entry (aware/panic) — none | honk | flash | lock.
+  sentryAutoAction   String           @default("none")
+  // APNs device token, registered by the app once notification permission
+  // is granted (POST /settings/device-token). Single token: this is a
+  // single-user/single-device app, not a fleet of installs to fan out to.
+  pushToken          String?
   createdAt          DateTime         @default(now())
   teslaCredential    TeslaCredential?
 }

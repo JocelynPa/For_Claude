@@ -31,6 +31,14 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: false
+    entitlements:
+      path: TeslaCompanion/TeslaCompanion.entitlements
+      properties:
+        # "development" for direct Xcode installs (matches
+        # APNS_PRODUCTION=false in deploy/.env) — switch to "production"
+        # only once distributed via TestFlight/App Store, alongside
+        # APNS_PRODUCTION=true. See deploy/README.md §12.
+        aps-environment: development
 schemes:
   TeslaCompanion:
     build:

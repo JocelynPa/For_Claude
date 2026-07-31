@@ -164,6 +164,16 @@ automatisées pendant la rédaction). Test réel nécessaire à l'étape 11.7.
 faire directement dans le conteneur pour valider le certificat client du
 véhicule). Il lui faut son propre point d'entrée réseau.
 
+⚠️ **Ne créez surtout pas de Proxy Host NPM pour ce sous-domaine**, même
+par réflexe (sur le modèle de `companion.jp-engineering.fr`). NPM
+terminerait le TLS avec son propre certificat puis relaierait vers
+`fleet-telemetry` en HTTP simple par défaut — ce qui casse le mTLS sans
+erreur explicite côté NPM, et produit côté `fleet-telemetry` des
+`http: TLS handshake error ...: client sent an HTTP request to an HTTPS
+server` en boucle. La redirection doit passer **uniquement** par la
+règle de port du routeur/firewall (§11.4), directement vers
+`<FLEET_TELEMETRY_STATIC_IP>`.
+
 ### 11.1 Sous-domaine dédié
 
 Créez un enregistrement DNS `A` pour `telemetry.jp-engineering.fr` (ou le
@@ -196,10 +206,20 @@ et ne fait rien, pas besoin d'une commande `renew` séparée.
 
 ### 11.4 Routeur
 
-Redirigez un port de votre choix (ex. 443, ou un autre si déjà pris par
-NPM sur l'IP du NAS — ici ça n'entre pas en conflit puisque
-`fleet-telemetry` a sa propre IP macvlan) vers
-`<FLEET_TELEMETRY_STATIC_IP>:443`.
+Redirigez le port externe défini dans `FLEET_TELEMETRY_PORT` (`8443` par
+défaut, **pas 443**) vers `<FLEET_TELEMETRY_STATIC_IP>:443`.
+
+⚠️ Port externe **différent de 443 obligatoire** si votre reverse proxy
+(NPM) écoute déjà le port 443 sur la même IP publique : avec une seule IP
+publique, deux règles NAT ne peuvent pas cibler le même port externe vers
+deux IP internes différentes sans routage par nom d'hôte (SNI), que
+`fleet-telemetry` ne fait pas (pas de virtual-hosting, contrairement à
+NPM). En pratique, la règle existante pour NPM capte alors tout le trafic
+port 443, et `fleet-telemetry` ne reçoit jamais rien — vécu en conditions
+réelles, voir aussi l'avertissement NPM plus bas. Le port interne
+d'écoute du conteneur reste 443 (`fleet-telemetry-config.json`) ; seul le
+port externe/NAT et la valeur envoyée au véhicule (`FLEET_TELEMETRY_PORT`)
+changent.
 
 ### 11.5 Lancer
 
@@ -263,6 +283,64 @@ docker compose logs backend --tail 30 | grep -i telemetry
 Puis, dans l'app iOS, l'onglet Sentry devrait commencer à recevoir de
 vraies entrées à la prochaine transition d'état Sentry (activer/désactiver
 Sentry Mode depuis l'app Tesla officielle pour tester rapidement).
+
+## 12. Notifications push (APNs)
+
+Optionnel — envoie une notification à chaque entrée "activité détectée"
+(aware/panic) sur le flux Fleet Telemetry. Nécessite Fleet Telemetry déjà
+fonctionnel (§11) et un compte développeur Apple.
+
+### 12.1 Générer la clé APNs
+
+Dans [developer.apple.com](https://developer.apple.com) → **Certificates,
+Identifiers & Profiles → Keys** → créez une nouvelle clé avec **Apple Push
+Notifications service (APNs)** cochée. Téléchargez le fichier `.p8`
+(non re-téléchargeable ensuite — conservez-le), notez le **Key ID** affiché
+et votre **Team ID** (en haut à droite de la page, ou dans Membership).
+
+### 12.2 Configuration
+
+Dans `deploy/.env` :
+- `APNS_KEY_ID` : le Key ID de la clé générée
+- `APNS_TEAM_ID` : votre Team ID Apple Developer
+- `APNS_AUTH_KEY` : le contenu du fichier `.p8` (le bloc `-----BEGIN
+  PRIVATE KEY----- ... -----END PRIVATE KEY-----` complet, sur une seule
+  ligne avec `\n` littéraux — la variable d'environnement ne peut pas
+  contenir de vrais retours à la ligne)
+- `APNS_BUNDLE_ID` : `com.teslacompanion.app` (déjà la valeur par défaut,
+  doit correspondre à `PRODUCT_BUNDLE_IDENTIFIER` dans `ios/project.yml`)
+- `APNS_PRODUCTION` : `false` tant que l'app est installée via Xcode en
+  direct (device de développement) — passez à `true` seulement après
+  distribution via TestFlight ou l'App Store, l'environnement APNs
+  (sandbox vs production) doit correspondre à comment l'app a été
+  installée, sinon les pushs échouent silencieusement.
+
+```bash
+docker compose up -d backend
+```
+
+### 12.3 Activer côté app
+
+Dans l'app iOS, **Réglages → Alertes Sentry Mode** (activé par défaut) —
+au premier lancement authentifié, l'app demande la permission de
+notification puis enregistre le token auprès du backend
+(`POST /settings/device-token`). Rien à faire côté NAS au-delà de la
+configuration `.env` ci-dessus.
+
+## 13. Action automatique sur détection Sentry
+
+Dans **Réglages**, l'utilisateur peut choisir une action déclenchée
+automatiquement par le backend (pas par l'app, donc ça marche même app
+fermée) à chaque entrée "activité détectée" : klaxon, phares, verrouillage
+des portes, ou aucune. Stocké côté backend (`sentryAutoAction` sur
+`User`, via `GET`/`PATCH /settings`), lu par l'ingestor à chaque
+détection.
+
+⚠️ Le son "pet" (haut-parleur extérieur, commande Tesla `remote_boombox`)
+n'est **pas** proposé : `tesla-http-proxy` (le proxy de signature officiel
+dont dépend toute commande signée dans ce projet) le marque explicitement
+`command not implemented` dans son code source — impossible à fiabiliser
+avec l'infra actuelle.
 
 ## Mises à jour
 

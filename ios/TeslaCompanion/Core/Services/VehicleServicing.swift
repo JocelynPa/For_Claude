@@ -9,6 +9,7 @@ protocol VehicleServicing {
     func stopCharging(_ vehicleId: String) async throws
     func flashLights(_ vehicleId: String) async throws
     func honkHorn(_ vehicleId: String) async throws
+    func setSentryMode(_ vehicleId: String, on: Bool) async throws
     func fetchChargingSessions(vehicleId: String) async throws -> [ChargingSession]
     func fetchDrivingSessions(vehicleId: String) async throws -> [DrivingSession]
     func fetchMonthlySummary(vehicleId: String) async throws -> MonthlySummary
