@@ -17,7 +17,12 @@ targets:
       path: TeslaCompanion/Resources/Info.plist
       properties:
         CFBundleDisplayName: Tesla Companion
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        # Dark-only design (see TeslaCompanionApp) — set here too so the
+        # status bar/launch screen already match before SwiftUI applies
+        # .preferredColorScheme(.dark).
+        UIUserInterfaceStyle: Dark
         ITSAppUsesNonExemptEncryption: false
         API_BASE_URL: https://grapple-battering-donation.ngrok-free.dev
         CFBundleURLTypes:

@@ -10,7 +10,7 @@ struct PrimaryButton: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 if isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(AppTheme.Colors.background)
                 } else {
                     if let icon {
                         Image(systemName: icon)
@@ -19,10 +19,17 @@ struct PrimaryButton: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .foregroundStyle(.white)
-            .background(AppTheme.Colors.accent)
+            .padding(.vertical, 15)
+            .foregroundStyle(AppTheme.Colors.background)
+            .background(
+                LinearGradient(
+                    colors: [AppTheme.Colors.accent, AppTheme.Colors.accent.opacity(0.85)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .shadow(color: AppTheme.Colors.accent.opacity(0.35), radius: 14, x: 0, y: 6)
         }
         .disabled(isLoading)
     }
