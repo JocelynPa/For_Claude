@@ -37,20 +37,6 @@ const schema = z.object({
   FLEET_TELEMETRY_HOSTNAME: z.string().optional(),
   FLEET_TELEMETRY_PORT: z.coerce.number().default(443),
   FLEET_TELEMETRY_CA_FILE: z.string().optional(),
-  // Push notifications (APNs), sent when the ingestor records an
-  // "activityDetected" entry. Optional: the backend runs fine without
-  // these set, it just won't send pushes — see deploy/README.md.
-  APNS_KEY_ID: z.string().optional(),
-  APNS_TEAM_ID: z.string().optional(),
-  // Contents of the .p8 auth key downloaded from developer.apple.com.
-  APNS_AUTH_KEY: z.string().optional(),
-  APNS_BUNDLE_ID: z.string().default("com.teslacompanion.app"),
-  // false (sandbox) for Xcode/TestFlight-less installs, true once
-  // distributed via TestFlight or the App Store.
-  APNS_PRODUCTION: z
-    .string()
-    .default("false")
-    .transform((value) => value === "true"),
 });
 
 export const env = schema.parse(process.env);

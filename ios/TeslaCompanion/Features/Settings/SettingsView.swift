@@ -28,14 +28,9 @@ struct SettingsView: View {
                     }
                 }
 
-                Section {
+                Section("Notifications") {
                     Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
-                        .onChange(of: sentryNotifications) { _, isOn in
-                            if isOn { environment.pushManager.requestAuthorizationIfEnabled() }
-                        }
                     Toggle("Rapports de conduite", isOn: $drivingReports)
-                } header: {
-                    Text("Notifications")
                 }
 
                 Section {

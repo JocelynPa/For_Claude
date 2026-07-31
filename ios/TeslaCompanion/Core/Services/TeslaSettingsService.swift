@@ -19,12 +19,4 @@ final class TeslaSettingsService: SettingsServicing {
             authToken: auth.accessToken
         ) as AppSettings
     }
-
-    func registerDeviceToken(_ token: String) async throws {
-        let body = try JSONEncoder().encode(["token": token])
-        try await client.send(
-            Endpoint(path: "settings/device-token", method: "POST", body: body),
-            authToken: auth.accessToken
-        ) as EmptyResponse
-    }
 }

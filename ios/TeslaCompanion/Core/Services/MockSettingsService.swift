@@ -10,6 +10,4 @@ final class MockSettingsService: SettingsServicing {
     func setSentryAutoAction(_ action: SentryAutoAction) async throws {
         self.action = action
     }
-
-    func registerDeviceToken(_ token: String) async throws {}
 }
