@@ -4,6 +4,7 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @EnvironmentObject private var environment: AppEnvironment
+    @State private var showPaywall = false
     @State private var tokenCopied = false
     @State private var sentryAutoAction: SentryAutoAction = .none
     @State private var wheelStyle: WheelStyle = .defaultWheels
@@ -12,6 +13,21 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Abonnement") {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "sparkles").foregroundStyle(AppTheme.Colors.accent)
+                            Text("Passer à Premium")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.Colors.textSecondary)
+                        }
+                    }
+                }
+
                 Section("Notifications") {
                     Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
                 }
@@ -96,6 +112,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Réglages")
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
             .task {
                 if let settings = try? await environment.settingsService.fetchSettings() {
                     sentryAutoAction = settings.sentryAutoAction

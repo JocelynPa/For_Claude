@@ -27,6 +27,7 @@ const schema = z.object({
     .default("true")
     .transform((value) => value === "true"),
   APP_REDIRECT_SCHEME: z.string().default("teslacompanion"),
+  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
   // Fleet Telemetry ingestion (Sentry timeline). Optional: the backend runs
   // fine without it, it just won't ingest real Sentry timeline data — see
   // deploy/README.md.

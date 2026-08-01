@@ -12,13 +12,16 @@ générique.
 Le contrôle véhicule complet (verrouillage, climatisation, charge…) et les
 statistiques (déjà couverts par l'app Tesla officielle) ont été
 volontairement retirés — voir la discussion sur le sujet dans l'historique
-git si besoin de les réintroduire.
+git si besoin de les réintroduire. L'abonnement Premium, lui, reste —
+adapté pour mettre en avant ce que Sentry Mode apporte (timeline temps
+réel, action automatique, notifications), pas les fonctionnalités
+retirées.
 
 ## Structure
 
 ```
 ios/          Application SwiftUI (projet généré via XcodeGen)
-backend/      API Fastify/TypeScript : OAuth Tesla, proxy Fleet API, ingestion Fleet Telemetry
+backend/      API Fastify/TypeScript : OAuth Tesla, proxy Fleet API, ingestion Fleet Telemetry, webhook RevenueCat
 deploy/       Déploiement Docker Compose (NAS, VPS...) : backend + Postgres + proxy de signature + Fleet Telemetry
 ```
 
@@ -74,11 +77,18 @@ compilation.
 - **Rendu réel du véhicule** (modèle/couleur/jantes, via l'API compositeur
   d'images Tesla — non-officielle mais publique, utilisée par
   TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`)
-- **Réglages** : notifications, action Sentry automatique, style de jantes,
-  appairage de la clé virtuelle, déconnexion
+- **Paywall** Premium (plans mensuel/annuel), axé sur ce que Sentry Mode
+  apporte par rapport à l'app Tesla officielle — UI seule pour l'instant,
+  rien n'est réellement restreint côté backend (webhook RevenueCat prêt à
+  recevoir les événements, SDK d'achat non branché, voir plus bas)
+- **Réglages** : abonnement, notifications, action Sentry automatique,
+  style de jantes, appairage de la clé virtuelle, déconnexion
 
 ### Ce qui reste à faire pour une v1 réelle
 
+- Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only ;
+  `subscriptionStatus` sur `User` est déjà mis à jour par le webhook
+  RevenueCat, mais rien ne le lit encore pour restreindre une fonctionnalité)
 - La timeline Sentry a sa propre voie réelle (Fleet Telemetry, voir
   `deploy/README.md` §11) mais reste non déployée par défaut ; le champ
   `firedActions` de chaque entrée (ce que **Tesla lui-même** a déclenché,
