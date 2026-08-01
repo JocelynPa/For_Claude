@@ -6,6 +6,10 @@ export interface TeslaVehicleListItem {
   vin: string;
   display_name: string;
   state: string; // "online" | "asleep" | "offline"
+  // Lives here, not on vehicle_data — confirmed against a real vehicle
+  // after a first (wrong) guess that it was on vehicle_data returned
+  // `undefined` every time.
+  option_codes?: string;
 }
 
 export interface TeslaVehicleData {
@@ -28,7 +32,6 @@ export interface TeslaVehicleData {
     car_type: string;
     exterior_color: string | null;
   };
-  option_codes?: string;
 }
 
 const CAR_TYPE_LABELS: Record<string, string> = {
@@ -62,7 +65,7 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
     vin: list.vin,
     model: data ? (CAR_TYPE_LABELS[data.vehicle_config.car_type] ?? data.vehicle_config.car_type) : "Tesla",
     color: data?.vehicle_config.exterior_color ?? "—",
-    imageUrl: data ? buildVehicleImageUrl(data.vehicle_config.car_type, data.option_codes) : null,
+    imageUrl: data ? buildVehicleImageUrl(data.vehicle_config.car_type, list.option_codes) : null,
     state: list.state === "online" ? "online" : list.state === "asleep" ? "asleep" : "offline",
     battery: {
       batteryLevel: data?.charge_state.battery_level ?? 0,
