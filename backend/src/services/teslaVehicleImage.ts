@@ -87,24 +87,46 @@ const CAR_TYPE_TO_MODEL_CODE: Record<string, ModelCode> = {
   modelx: "mx",
 };
 
+// `option_codes` turned out unusable in practice — confirmed both by a real
+// vehicle returning `null` for it, and independently documented as
+// unreliable since 2019 (Tesla stopped populating it meaningfully years
+// before the Fleet API existed). `exterior_color` is still populated
+// though, so fall back to just the paint code for it — the compositor
+// renders fine with paint-only options (default wheels/interior), per the
+// same ported logic's own fallback path for cars with no matching options.
+// Only colors independently confirmed against 2+ sources are included;
+// anything else falls back to the generic icon rather than guess a code.
+const PAINT_CODE_BY_COLOR: Record<string, string> = {
+  SolidBlack: "PBSB",
+  MidnightSilverMetallic: "PMNG",
+  PearlWhite: "PPSW",
+  SilverMetallic: "PMSS",
+  DeepBlueMetallic: "PPSB",
+  RedMulticoat: "PPMR",
+};
+
 // Returns null for car types the compositor doesn't support (Cybertruck —
-// not covered by the ported logic above) rather than guessing at a URL that
-// might not render.
-export function buildVehicleImageUrl(carType: string, optionCodesRaw: string | undefined): string | null {
+// not covered by the ported logic above), or when we have neither
+// option_codes nor a recognized paint color to fall back to.
+export function buildVehicleImageUrl(
+  carType: string,
+  optionCodesRaw: string | null | undefined,
+  exteriorColor: string | null | undefined
+): string | null {
   const model = CAR_TYPE_TO_MODEL_CODE[carType];
-  if (!model || !optionCodesRaw) {
-    // Temporary diagnostic: figure out which of the two is missing, since
-    // vehicle_data's actual shape for option_codes hasn't been confirmed
-    // against a real Fleet API response yet.
-    console.log("buildVehicleImageUrl: no image URL", {
-      carType,
-      model,
-      optionCodesRaw,
-    });
+  if (!model) return null;
+
+  const optionCodes = optionCodesRaw
+    ? optionCodesRaw.split(",").map((code) => code.trim()).filter(Boolean)
+    : exteriorColor && PAINT_CODE_BY_COLOR[exteriorColor]
+      ? [PAINT_CODE_BY_COLOR[exteriorColor]]
+      : null;
+
+  if (!optionCodes) {
+    console.log("buildVehicleImageUrl: no option_codes and no known paint color", { carType, exteriorColor });
     return null;
   }
 
-  const optionCodes = optionCodesRaw.split(",").map((code) => code.trim()).filter(Boolean);
   const url = new URL("https://static-assets.tesla.com/configurator/compositor");
   // Params (bkba_opt/file_type included) kept exactly as the verified
   // reference uses them, not guessed — untested deviations here risk a

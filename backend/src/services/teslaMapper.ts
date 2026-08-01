@@ -65,7 +65,9 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
     vin: list.vin,
     model: data ? (CAR_TYPE_LABELS[data.vehicle_config.car_type] ?? data.vehicle_config.car_type) : "Tesla",
     color: data?.vehicle_config.exterior_color ?? "—",
-    imageUrl: data ? buildVehicleImageUrl(data.vehicle_config.car_type, list.option_codes) : null,
+    imageUrl: data
+      ? buildVehicleImageUrl(data.vehicle_config.car_type, list.option_codes, data.vehicle_config.exterior_color)
+      : null,
     state: list.state === "online" ? "online" : list.state === "asleep" ? "asleep" : "offline",
     battery: {
       batteryLevel: data?.charge_state.battery_level ?? 0,
