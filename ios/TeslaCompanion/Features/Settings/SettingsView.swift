@@ -4,34 +4,16 @@ import UIKit
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @EnvironmentObject private var environment: AppEnvironment
-    @State private var showPaywall = false
     @State private var tokenCopied = false
     @State private var sentryAutoAction: SentryAutoAction = .none
     @State private var wheelStyle: WheelStyle = .defaultWheels
     @AppStorage("sentry_notifications_enabled") private var sentryNotifications = true
-    @AppStorage("driving_reports_enabled") private var drivingReports = true
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Abonnement") {
-                    Button {
-                        showPaywall = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "sparkles").foregroundStyle(AppTheme.Colors.accent)
-                            Text("Passer à Premium")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(AppTheme.Colors.textSecondary)
-                        }
-                    }
-                }
-
                 Section("Notifications") {
                     Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
-                    Toggle("Rapports de conduite", isOn: $drivingReports)
                 }
 
                 Section {
@@ -75,7 +57,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Sécurité")
                 } footer: {
-                    Text("Requis pour que les commandes (verrouillage, climatisation…) fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
+                    Text("Requis pour que la bascule Sentry Mode et l'action automatique fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
                 }
 
                 Section("Compte") {
@@ -114,9 +96,6 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Réglages")
-            .sheet(isPresented: $showPaywall) {
-                PaywallView()
-            }
             .task {
                 if let settings = try? await environment.settingsService.fetchSettings() {
                     sentryAutoAction = settings.sentryAutoAction

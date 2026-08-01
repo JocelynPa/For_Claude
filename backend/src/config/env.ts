@@ -10,8 +10,9 @@ const schema = z.object({
   TESLA_REDIRECT_URI: z.string().url(),
   TESLA_AUDIENCE: z.string().default("https://fleet-api.prd.eu.vn.cloud.tesla.com"),
   // Local `tesla-http-proxy` instance that signs vehicle commands with the
-  // Vehicle Command private key. Required for lock/climate/charge commands
-  // to work on any vehicle enforcing the Vehicle Command Protocol — see
+  // Vehicle Command private key. Required for the Sentry Mode toggle and
+  // the Fleet Telemetry auto-action (honk/flash/lock) to work on any
+  // vehicle enforcing the Vehicle Command Protocol — see
   // backend/keys/README.md.
   TESLA_COMMAND_PROXY_URL: z.string().url().default("https://localhost:4443"),
   // The proxy serves HTTPS with a self-signed cert (there's no public CA to
@@ -26,7 +27,6 @@ const schema = z.object({
     .default("true")
     .transform((value) => value === "true"),
   APP_REDIRECT_SCHEME: z.string().default("teslacompanion"),
-  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
   // Fleet Telemetry ingestion (Sentry timeline). Optional: the backend runs
   // fine without it, it just won't ingest real Sentry timeline data — see
   // deploy/README.md.
