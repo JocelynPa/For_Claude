@@ -16,6 +16,8 @@ struct StatTile: View {
             Text(value)
                 .font(AppFont.statValue())
                 .foregroundStyle(AppTheme.Colors.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(label.uppercased())
                 .font(AppFont.statLabel())
                 .foregroundStyle(AppTheme.Colors.textSecondary)
