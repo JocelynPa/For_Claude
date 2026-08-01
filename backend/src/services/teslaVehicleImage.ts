@@ -149,11 +149,15 @@ export function buildVehicleImageUrl(
   }
 
   const url = new URL("https://static-assets.tesla.com/configurator/compositor");
-  // Params (bkba_opt/file_type included) kept exactly as the verified
-  // reference uses them, not guessed — untested deviations here risk a
-  // blank/wrong image with no error to debug from.
-  url.searchParams.set("bkba_opt", "2");
-  url.searchParams.set("file_type", "jpg");
+  // bkba_opt=2 + file_type=jpg (the verified reference's own choice)
+  // reliably renders but always opaque-white — jpg has no alpha channel at
+  // all, so transparency needs png regardless of bkba_opt. bkba_opt=1 is
+  // the value most consistently reported as "transparent" across
+  // (conflicting) sources, but unverified — this sandbox can't reach
+  // static-assets.tesla.com to test it directly, so treat this as a
+  // reasoned attempt to confirm against a real device, not a guarantee.
+  url.searchParams.set("bkba_opt", "1");
+  url.searchParams.set("file_type", "png");
   url.searchParams.set("model", model);
   url.searchParams.set("options", getOptions(optionCodes, model).sort().join(","));
   url.searchParams.set("view", getViewAngle(optionCodes, model));
