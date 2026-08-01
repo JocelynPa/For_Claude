@@ -10,16 +10,24 @@ export async function settingsRoutes(app: FastifyInstance) {
 
   app.get("/settings", async (request) => {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: request.userId! } });
-    return { sentryAutoAction: user.sentryAutoAction };
+    return { sentryAutoAction: user.sentryAutoAction, wheelOptionCode: user.wheelOptionCode };
   });
 
-  const updateSettingsBody = z.object({ sentryAutoAction: z.enum(SENTRY_AUTO_ACTIONS) });
+  // Both fields optional so either can be updated independently — the app
+  // currently only ever sends one at a time.
+  const updateSettingsBody = z.object({
+    sentryAutoAction: z.enum(SENTRY_AUTO_ACTIONS).optional(),
+    // Tesla option code for the vehicle image's wheels (e.g. "WY20P") —
+    // null clears it back to the compositor's default. See
+    // backend/src/services/teslaVehicleImage.ts.
+    wheelOptionCode: z.string().nullable().optional(),
+  });
   app.patch("/settings", async (request) => {
-    const { sentryAutoAction } = updateSettingsBody.parse(request.body);
+    const body = updateSettingsBody.parse(request.body);
     const user = await prisma.user.update({
       where: { id: request.userId! },
-      data: { sentryAutoAction },
+      data: body,
     });
-    return { sentryAutoAction: user.sentryAutoAction };
+    return { sentryAutoAction: user.sentryAutoAction, wheelOptionCode: user.wheelOptionCode };
   });
 }

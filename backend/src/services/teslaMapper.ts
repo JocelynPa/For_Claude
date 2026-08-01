@@ -51,7 +51,11 @@ const MILES_TO_KM = 1.60934;
  * return the vehicle with its list-level info and safe defaults, rather than
  * drop it entirely.
  */
-export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleData | null) {
+export function mapTeslaVehicle(
+  list: TeslaVehicleListItem,
+  data: TeslaVehicleData | null,
+  wheelOptionCode?: string | null
+) {
   return {
     // Use the VIN as the app-facing vehicle id, not Tesla's numeric Fleet
     // API id: the Fleet API's own read endpoints (vehicle_data, wake_up)
@@ -66,7 +70,12 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
     model: data ? (CAR_TYPE_LABELS[data.vehicle_config.car_type] ?? data.vehicle_config.car_type) : "Tesla",
     color: data?.vehicle_config.exterior_color ?? "—",
     imageUrl: data
-      ? buildVehicleImageUrl(data.vehicle_config.car_type, list.option_codes, data.vehicle_config.exterior_color)
+      ? buildVehicleImageUrl(
+          data.vehicle_config.car_type,
+          list.option_codes,
+          data.vehicle_config.exterior_color,
+          wheelOptionCode
+        )
       : null,
     state: list.state === "online" ? "online" : list.state === "asleep" ? "asleep" : "offline",
     battery: {
