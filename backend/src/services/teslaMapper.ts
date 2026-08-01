@@ -31,6 +31,10 @@ export interface TeslaVehicleData {
   vehicle_config: {
     car_type: string;
     exterior_color: string | null;
+    // Separate from option_codes (which the Fleet API doesn't populate) —
+    // confirmed present on vehicle_config, e.g. "Induction20" for Model Y's
+    // 20" wheels. See teslaVehicleImage.ts's WHEEL_CODE_BY_TYPE.
+    wheel_type?: string | null;
   };
 }
 
@@ -74,6 +78,7 @@ export function mapTeslaVehicle(
           data.vehicle_config.car_type,
           list.option_codes,
           data.vehicle_config.exterior_color,
+          data.vehicle_config.wheel_type,
           wheelOptionCode
         )
       : null,
