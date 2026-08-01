@@ -105,6 +105,14 @@ const PAINT_CODE_BY_COLOR: Record<string, string> = {
   RedMulticoat: "PPMR",
 };
 
+// vehicle_config.wheel_type (e.g. "Induction20") is a separate field from
+// option_codes and, unlike it, is actually populated by the Fleet API —
+// confirmed against a real Model Y. Only entries actually verified are
+// listed; anything else falls through to the manual override below.
+const WHEEL_CODE_BY_TYPE: Record<string, string> = {
+  Induction20: "WY20P",
+};
+
 // Returns null for car types the compositor doesn't support (Cybertruck —
 // not covered by the ported logic above), or when we have neither
 // option_codes nor a recognized paint color to fall back to.
@@ -112,20 +120,27 @@ export function buildVehicleImageUrl(
   carType: string,
   optionCodesRaw: string | null | undefined,
   exteriorColor: string | null | undefined,
-  // Manual override for the wheel code (see User.wheelOptionCode) — Tesla
-  // doesn't expose the real one anywhere the Fleet API gives us access to,
-  // so this is the only way to get the actual wheels instead of the
-  // compositor's default. Ignored when optionCodesRaw is present (that
-  // already carries whatever wheel info Tesla did provide).
+  wheelType: string | null | undefined,
+  // Manual override for the wheel code (see User.wheelOptionCode), used
+  // only when wheelType isn't set or isn't in WHEEL_CODE_BY_TYPE yet.
+  // Ignored when optionCodesRaw is present (that already carries whatever
+  // wheel info Tesla did provide).
   wheelOptionCode?: string | null
 ): string | null {
   const model = CAR_TYPE_TO_MODEL_CODE[carType];
   if (!model) return null;
 
+  const wheelCode = (wheelType && WHEEL_CODE_BY_TYPE[wheelType]) || wheelOptionCode || undefined;
+  if (wheelType && !WHEEL_CODE_BY_TYPE[wheelType]) {
+    // Diagnostic: confirms the exact string Tesla sends so an unmapped
+    // wheel_type can be added with the real value, not a guessed spelling.
+    console.log("buildVehicleImageUrl: unmapped wheel_type", { wheelType });
+  }
+
   const optionCodes = optionCodesRaw
     ? optionCodesRaw.split(",").map((code) => code.trim()).filter(Boolean)
     : exteriorColor && PAINT_CODE_BY_COLOR[exteriorColor]
-      ? [PAINT_CODE_BY_COLOR[exteriorColor], ...(wheelOptionCode ? [wheelOptionCode] : [])]
+      ? [PAINT_CODE_BY_COLOR[exteriorColor], ...(wheelCode ? [wheelCode] : [])]
       : null;
 
   if (!optionCodes) {
