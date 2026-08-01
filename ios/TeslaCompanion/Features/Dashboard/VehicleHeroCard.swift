@@ -42,15 +42,43 @@ struct VehicleHeroCard: View {
     }
 }
 
-/// The real vehicle render from Tesla's own image compositor (model, paint,
-/// wheels — see backend/src/services/teslaVehicleImage.ts), on a soft
-/// "spotlight" backdrop rather than a flat background. Falls back to a
-/// generic glyph while loading, on failure, or when no image URL is
-/// available (car type unsupported by the compositor, e.g. Cybertruck).
+/// The real vehicle render from Tesla's own image compositor (model, paint —
+/// see backend/src/services/teslaVehicleImage.ts) always comes back on an
+/// opaque white studio backdrop (the compositor has no reliable transparent
+/// mode), so it sits in its own white "product photo" card rather than
+/// fighting that background — a deliberate light card on the otherwise dark
+/// UI, not a bug. Falls back to a generic glyph on a dark spotlight instead
+/// while loading, on failure, or when no image URL is available (car type
+/// unsupported by the compositor, e.g. Cybertruck).
 private struct VehiclePortrait: View {
     let imageUrl: URL?
 
     var body: some View {
+        if let imageUrl {
+            AsyncImage(url: imageUrl) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFit()
+                        .padding(AppSpacing.sm)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 190)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                case .failure:
+                    fallbackPortrait
+                default:
+                    ProgressView()
+                        .tint(AppTheme.Colors.accent)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 190)
+                }
+            }
+        } else {
+            fallbackPortrait
+        }
+    }
+
+    private var fallbackPortrait: some View {
         ZStack {
             RadialGradient(
                 colors: [AppTheme.Colors.accent.opacity(0.16), .clear],
@@ -58,29 +86,11 @@ private struct VehiclePortrait: View {
                 startRadius: 10,
                 endRadius: 170
             )
-
-            if let imageUrl {
-                AsyncImage(url: imageUrl) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    case .failure:
-                        fallbackGlyph
-                    default:
-                        ProgressView().tint(AppTheme.Colors.accent)
-                    }
-                }
-            } else {
-                fallbackGlyph
-            }
+            Image(systemName: "car.side.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(AppTheme.Colors.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 190)
-    }
-
-    private var fallbackGlyph: some View {
-        Image(systemName: "car.side.fill")
-            .font(.system(size: 60))
-            .foregroundStyle(AppTheme.Colors.textSecondary)
     }
 }
