@@ -92,7 +92,17 @@ const CAR_TYPE_TO_MODEL_CODE: Record<string, ModelCode> = {
 // might not render.
 export function buildVehicleImageUrl(carType: string, optionCodesRaw: string | undefined): string | null {
   const model = CAR_TYPE_TO_MODEL_CODE[carType];
-  if (!model || !optionCodesRaw) return null;
+  if (!model || !optionCodesRaw) {
+    // Temporary diagnostic: figure out which of the two is missing, since
+    // vehicle_data's actual shape for option_codes hasn't been confirmed
+    // against a real Fleet API response yet.
+    console.log("buildVehicleImageUrl: no image URL", {
+      carType,
+      model,
+      optionCodesRaw,
+    });
+    return null;
+  }
 
   const optionCodes = optionCodesRaw.split(",").map((code) => code.trim()).filter(Boolean);
   const url = new URL("https://static-assets.tesla.com/configurator/compositor");
