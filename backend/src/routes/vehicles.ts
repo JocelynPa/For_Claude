@@ -9,21 +9,38 @@ import { getValidAccessToken } from "../services/tokenStore.js";
 import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } from "../services/teslaMapper.js";
 
 // `vehicle_data` fails while the car is asleep. Try once, wake it up on
-// failure, wait for it to come online, and retry once more. Returns null
-// (rather than throwing) if the car still doesn't respond — the mapper
-// falls back to safe defaults for battery/climate in that case.
+// failure, then poll for up to ~30s (a single 4s wait wasn't enough in
+// practice — real vehicles can take much longer to fully wake and report
+// state). Returns null (rather than throwing) if the car still doesn't
+// respond — the mapper falls back to safe defaults for battery/climate in
+// that case. Every failure is logged since callers only ever see null,
+// not why.
 async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
   try {
     return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
-  } catch {
+  } catch (initialError) {
+    console.error(`vehicle_data failed for ${id}, attempting wake_up`, initialError);
+  }
+
+  try {
+    await fleetApiFetch(`/vehicles/${id}/wake_up`, token, { method: "POST" });
+  } catch (wakeError) {
+    console.error(`wake_up failed for ${id}`, wakeError);
+    return null;
+  }
+
+  const attempts = 6;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     try {
-      await fleetApiFetch(`/vehicles/${id}/wake_up`, token, { method: "POST" });
-      await new Promise((resolve) => setTimeout(resolve, 4000));
       return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
-    } catch {
-      return null;
+    } catch (retryError) {
+      if (attempt === attempts) {
+        console.error(`vehicle_data still failing for ${id} after wake_up + ${attempts} retries`, retryError);
+      }
     }
   }
+  return null;
 }
 
 export async function vehicleRoutes(app: FastifyInstance) {
