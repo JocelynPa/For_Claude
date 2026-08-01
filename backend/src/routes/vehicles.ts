@@ -48,11 +48,14 @@ export async function vehicleRoutes(app: FastifyInstance) {
 
   app.get("/vehicles", async (request) => {
     const token = await getValidAccessToken(request.userId!);
-    const list = await fleetApiFetch<TeslaVehicleListItem[]>("/vehicles", token);
+    const [list, user] = await Promise.all([
+      fleetApiFetch<TeslaVehicleListItem[]>("/vehicles", token),
+      prisma.user.findUnique({ where: { id: request.userId! } }),
+    ]);
     return Promise.all(
       list.map(async (item) => {
         const data = await fetchVehicleDataWithWake(String(item.id), token);
-        return mapTeslaVehicle(item, data);
+        return mapTeslaVehicle(item, data, user?.wheelOptionCode);
       })
     );
   });

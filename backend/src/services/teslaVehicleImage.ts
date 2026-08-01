@@ -111,7 +111,13 @@ const PAINT_CODE_BY_COLOR: Record<string, string> = {
 export function buildVehicleImageUrl(
   carType: string,
   optionCodesRaw: string | null | undefined,
-  exteriorColor: string | null | undefined
+  exteriorColor: string | null | undefined,
+  // Manual override for the wheel code (see User.wheelOptionCode) — Tesla
+  // doesn't expose the real one anywhere the Fleet API gives us access to,
+  // so this is the only way to get the actual wheels instead of the
+  // compositor's default. Ignored when optionCodesRaw is present (that
+  // already carries whatever wheel info Tesla did provide).
+  wheelOptionCode?: string | null
 ): string | null {
   const model = CAR_TYPE_TO_MODEL_CODE[carType];
   if (!model) return null;
@@ -119,7 +125,7 @@ export function buildVehicleImageUrl(
   const optionCodes = optionCodesRaw
     ? optionCodesRaw.split(",").map((code) => code.trim()).filter(Boolean)
     : exteriorColor && PAINT_CODE_BY_COLOR[exteriorColor]
-      ? [PAINT_CODE_BY_COLOR[exteriorColor]]
+      ? [PAINT_CODE_BY_COLOR[exteriorColor], ...(wheelOptionCode ? [wheelOptionCode] : [])]
       : null;
 
   if (!optionCodes) {
