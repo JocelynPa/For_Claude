@@ -66,7 +66,11 @@ struct SentryHomeView: View {
             isLoading = false
             return
         }
-        events = (try? await environment.sentryService.fetchEvents(vehicleId: vehicleId)) ?? []
+        // Same reasoning as `vehicle` above: a failed refresh shouldn't wipe
+        // an already-populated events list.
+        if let fetched = try? await environment.sentryService.fetchEvents(vehicleId: vehicleId) {
+            events = fetched
+        }
         isLoading = false
     }
 
