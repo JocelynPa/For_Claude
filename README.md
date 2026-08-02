@@ -65,12 +65,15 @@ compilation.
 - **Sentry Mode** : statut actif/inactif (pastille rouge animée, données
   réelles via `vehicle_state.sentry_mode`) avec bascule pour
   activer/désactiver directement depuis l'app, journal d'activité en
-  timeline (transitions en ligne/hors ligne, Sentry activé/désactivé,
-  activité détectée avec niveau Aware/Panic) — texte uniquement, pas
-  d'image ni de vidéo. Alimentable en données réelles via **Tesla Fleet
-  Telemetry** (le véhicule streame directement son état, voir
-  `deploy/README.md` §11) — non activé par défaut, l'onglet est vide tant
-  que ce n'est pas configuré
+  timeline (Sentry activé/désactivé, activité détectée avec niveau
+  Aware/Panic — les transitions en ligne/hors ligne du véhicule ne sont
+  plus affichées, trop verbeuses) — texte uniquement, pas d'image ni de
+  vidéo. Chaque session Sentry affiche aussi la conso batterie du
+  véhicule pendant qu'elle était active (champ `Soc`, pas isolé à Sentry
+  lui-même — voir la nuance affichée dans l'app). Alimentable en données
+  réelles via **Tesla Fleet Telemetry** (le véhicule streame directement
+  son état, voir `deploy/README.md` §11) — non activé par défaut, l'onglet
+  est vide tant que ce n'est pas configuré
 - **Action automatique** configurable (klaxon, phares, verrouillage, ou
   aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
   même app fermée. Voir `deploy/README.md` §12

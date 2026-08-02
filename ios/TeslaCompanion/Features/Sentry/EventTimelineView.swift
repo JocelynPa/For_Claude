@@ -103,6 +103,12 @@ private struct StateChangeGroupCard: View {
                     Text(entry.kind.label)
                         .font(AppFont.body())
                         .foregroundStyle(AppTheme.Colors.textPrimary)
+                    if let delta = Self.batteryDelta(at: index, in: entries) {
+                        Text(Self.batteryDeltaLabel(delta))
+                            .font(AppFont.caption())
+                            .fontWeight(.semibold)
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                    }
                     Spacer()
                     Text(entry.date.formatted(date: .omitted, time: .shortened))
                         .font(AppFont.caption())
@@ -125,6 +131,27 @@ private struct StateChangeGroupCard: View {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .stroke(AppTheme.Colors.hairline, lineWidth: 1)
         )
+    }
+
+    /// A `sentryModeDisabled` row paired with the `sentryModeEnabled` entry
+    /// right after it (chronologically earlier, since the list is sorted
+    /// most-recent-first) closes out one Sentry session — the battery delta
+    /// between the two. This is total vehicle consumption during that
+    /// window, not draw isolated to Sentry itself (see SentryHomeView's
+    /// caveat text).
+    private static func batteryDelta(at index: Int, in entries: [SentryTimelineEntry]) -> Int? {
+        let entry = entries[index]
+        guard entry.kind == .sentryModeDisabled, let disabledLevel = entry.batteryLevelPercent else { return nil }
+        guard index + 1 < entries.count else { return nil }
+        let next = entries[index + 1]
+        guard next.kind == .sentryModeEnabled, let enabledLevel = next.batteryLevelPercent else { return nil }
+        return enabledLevel - disabledLevel
+    }
+
+    private static func batteryDeltaLabel(_ delta: Int) -> String {
+        if delta > 0 { return "· -\(delta) %" }
+        if delta < 0 { return "· +\(-delta) %" }
+        return "· ±0 %"
     }
 }
 

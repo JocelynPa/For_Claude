@@ -19,7 +19,12 @@ final class MockSentryService: SentryServicing {
     private static func generateEntries() -> [SentryTimelineEntry] {
         let calendar = Calendar.current
 
-        func stateChange(_ kind: SentryTimelineKind, minutesAgo: Int, isNew: Bool = false) -> SentryTimelineEntry {
+        func stateChange(
+            _ kind: SentryTimelineKind,
+            minutesAgo: Int,
+            isNew: Bool = false,
+            batteryLevelPercent: Int? = nil
+        ) -> SentryTimelineEntry {
             SentryTimelineEntry(
                 id: UUID(),
                 date: calendar.date(byAdding: .minute, value: -minutesAgo, to: .now) ?? .now,
@@ -27,6 +32,7 @@ final class MockSentryService: SentryServicing {
                 activityDescription: nil,
                 awarenessLevel: nil,
                 firedActions: [],
+                batteryLevelPercent: batteryLevelPercent,
                 isNew: isNew
             )
         }
@@ -45,6 +51,7 @@ final class MockSentryService: SentryServicing {
                 activityDescription: description,
                 awarenessLevel: level,
                 firedActions: fired,
+                batteryLevelPercent: nil,
                 isNew: isNew
             )
         }
@@ -62,6 +69,8 @@ final class MockSentryService: SentryServicing {
                 isNew: true
             ),
             stateChange(.sentryModeEnabled, minutesAgo: 95, isNew: true),
+            stateChange(.sentryModeDisabled, minutesAgo: 130, batteryLevelPercent: 84),
+            stateChange(.sentryModeEnabled, minutesAgo: 260, batteryLevelPercent: 90),
             stateChange(.vehicleOnline, minutesAgo: 108),
             stateChange(.vehicleOffline, minutesAgo: 445),
             stateChange(.sentryModeEnabled, minutesAgo: 450),

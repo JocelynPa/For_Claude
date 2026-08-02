@@ -54,5 +54,12 @@ struct SentryTimelineEntry: Identifiable, Codable, Hashable {
     var awarenessLevel: SentryAwarenessLevel?
     var firedActions: [SentryFiredAction]
 
+    // Battery level (0-100) at the time of this entry — only set on
+    // sentryModeEnabled/Disabled entries. Paired up in EventTimelineView to
+    // show what was consumed during a Sentry session; this is total vehicle
+    // consumption while parked with Sentry on, not draw isolated to Sentry
+    // itself (Tesla doesn't expose that breakdown).
+    var batteryLevelPercent: Int?
+
     var isNew: Bool
 }
