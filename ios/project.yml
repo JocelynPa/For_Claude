@@ -17,6 +17,7 @@ targets:
       path: TeslaCompanion/Resources/Info.plist
       properties:
         CFBundleDisplayName: Sentinel Mode
+        CFBundleIconName: AppIcon
         UILaunchScreen:
           UIColorName: LaunchBackground
         # Dark-only design (see TeslaCompanionApp) — set here too so the
@@ -36,6 +37,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: false
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 schemes:
   TeslaCompanion:
     build:
