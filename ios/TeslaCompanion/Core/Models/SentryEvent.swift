@@ -11,8 +11,8 @@ enum SentryTimelineKind: String, Codable {
         switch self {
         case .vehicleOnline: "Véhicule en ligne"
         case .vehicleOffline: "Véhicule hors ligne"
-        case .sentryModeEnabled: "Sentry Mode activé"
-        case .sentryModeDisabled: "Sentry Mode désactivé"
+        case .sentryModeEnabled: "Sentinel activé"
+        case .sentryModeDisabled: "Sentinel désactivé"
         case .activityDetected: "Activité détectée"
         }
     }

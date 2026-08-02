@@ -29,7 +29,7 @@ struct SettingsView: View {
                 }
 
                 Section("Notifications") {
-                    Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
+                    Toggle("Alertes Sentinel", isOn: $sentryNotifications)
                 }
 
                 Section {
@@ -39,7 +39,7 @@ struct SettingsView: View {
                         }
                     }
                 } header: {
-                    Text("Sentry Mode")
+                    Text("Sentinel")
                 } footer: {
                     Text("Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée.")
                 }
@@ -73,7 +73,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Sécurité")
                 } footer: {
-                    Text("Requis pour que la bascule Sentry Mode et l'action automatique fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
+                    Text("Requis pour que la bascule Sentinel et l'action automatique fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
                 }
 
                 Section("Compte") {

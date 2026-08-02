@@ -36,7 +36,7 @@ struct SentryStatusBanner: View {
                         .frame(width: 8, height: 8)
                 }
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(isActive ? "Sentry Mode actif" : "Sentry Mode inactif")
+                    Text(isActive ? "Sentinel actif" : "Sentinel inactif")
                         .font(AppFont.headline())
                         .foregroundStyle(AppTheme.Colors.textPrimary)
                     Text(isActive ? "Le véhicule surveille ses abords" : "La surveillance est désactivée")
