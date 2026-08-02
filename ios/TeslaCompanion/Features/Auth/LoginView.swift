@@ -17,11 +17,11 @@ struct LoginView: View {
                         .font(.system(size: 48, weight: .semibold))
                         .foregroundStyle(AppTheme.Colors.accent)
 
-                    Text("Tesla Companion")
+                    Text("Sentinel Mode")
                         .font(AppFont.largeTitle())
                         .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                    Text("Contrôle, statistiques et Sentry Mode\nréunis dans une seule app.")
+                    Text("La surveillance Sentry Mode de votre Tesla,\nen temps réel.")
                         .font(AppFont.body())
                         .multilineTextAlignment(.center)
                         .foregroundStyle(AppTheme.Colors.textSecondary)
