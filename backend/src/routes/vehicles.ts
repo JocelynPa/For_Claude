@@ -85,7 +85,7 @@ export async function vehicleRoutes(app: FastifyInstance) {
   app.get("/vehicles/:id/sentry-timeline", async (request) => {
     const { id } = request.params as { id: string };
     const entries = await prisma.sentryTimelineEntry.findMany({
-      where: { vin: id },
+      where: { vin: id, kind: { notIn: ["vehicleOnline", "vehicleOffline"] } },
       orderBy: { date: "desc" },
       take: 200,
     });
