@@ -40,6 +40,11 @@ struct SentryHomeView: View {
                                 .font(AppFont.body())
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
                         } else {
+                            if events.contains(where: { $0.batteryLevelPercent != nil }) {
+                                Text("La conso affichée est celle du véhicule pendant la session, pas uniquement celle de Sentry Mode (dérive naturelle à l'arrêt incluse).")
+                                    .font(AppFont.caption())
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                            }
                             EventTimelineView(events: events)
                         }
                     }

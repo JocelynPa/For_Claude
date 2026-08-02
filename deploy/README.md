@@ -254,6 +254,13 @@ généralement explicite sur le champ en cause.
 Model S/X plus anciens ne sont pas compatibles) — voir le README de
 `teslamotors/fleet-telemetry`.
 
+Si votre véhicule était déjà abonné **avant** l'ajout du champ `Soc`
+(niveau de batterie, utilisé pour afficher la conso pendant une session
+Sentry — voir `backend/src/telemetry/ingestor.ts`), relancez cette même
+commande une fois le backend redéployé : la config envoyée au véhicule
+n'est mise à jour qu'à l'appel de `/telemetry/subscribe`, pas
+automatiquement.
+
 Une réponse `{"updated_vehicles":1}` confirme seulement que **Tesla a
 accepté la demande** — pas que le véhicule a effectivement récupéré la
 config ni ouvert la connexion. Vérifiez l'état réel avant de conclure à

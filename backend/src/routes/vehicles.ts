@@ -95,6 +95,7 @@ export async function vehicleRoutes(app: FastifyInstance) {
       kind: entry.kind,
       activityDescription: entry.activityDescription,
       awarenessLevel: entry.awarenessLevel,
+      batteryLevelPercent: entry.batteryLevelPercent,
       // Not derivable from the SentryModeState signal alone — see
       // deploy/README.md for what would be needed to populate this.
       firedActions: [] as { label: string; systemImage: string }[],
@@ -147,7 +148,13 @@ export async function vehicleRoutes(app: FastifyInstance) {
           hostname: env.FLEET_TELEMETRY_HOSTNAME,
           port: env.FLEET_TELEMETRY_PORT,
           ca,
-          fields: { SentryMode: { interval_seconds: intervalSeconds } },
+          fields: {
+            SentryMode: { interval_seconds: intervalSeconds },
+            // Battery level, used to show what was consumed during a
+            // Sentry session (see teslamotors/fleet-telemetry field
+            // catalog) — same "not first-hand verified" caveat as above.
+            Soc: { interval_seconds: intervalSeconds },
+          },
           alert_types: ["service"],
           // Tesla caps this at 364 days from its own server clock, not 365 —
           // use 360 to leave margin against clock skew / request latency.
