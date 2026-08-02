@@ -1,4 +1,4 @@
-# Tesla Companion
+# Sentinel Mode
 
 App iOS native (SwiftUI), exclusivement dédiée à **Sentry Mode** : statut en
 direct, bascule on/off, journal d'activité en timeline (façon **Sentry Mode

@@ -16,7 +16,7 @@ targets:
     info:
       path: TeslaCompanion/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Tesla Companion
+        CFBundleDisplayName: Sentinel Mode
         UILaunchScreen:
           UIColorName: LaunchBackground
         # Dark-only design (see TeslaCompanionApp) — set here too so the

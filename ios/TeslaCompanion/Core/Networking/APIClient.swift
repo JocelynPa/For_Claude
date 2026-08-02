@@ -22,7 +22,7 @@ enum APIError: LocalizedError {
 
 struct EmptyResponse: Decodable {}
 
-/// Thin wrapper around URLSession that talks to the Tesla Companion backend
+/// Thin wrapper around URLSession that talks to the Sentinel Mode backend
 /// (never directly to Tesla's Fleet API — that requires signed requests the
 /// backend handles on the app's behalf).
 final class APIClient {

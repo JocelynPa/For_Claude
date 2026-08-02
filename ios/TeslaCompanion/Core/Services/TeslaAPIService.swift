@@ -1,6 +1,6 @@
 import Foundation
 
-/// Real implementation that talks to the Tesla Companion backend, which in
+/// Real implementation that talks to the Sentinel Mode backend, which in
 /// turn proxies signed requests to Tesla's Fleet API. Not wired in by
 /// default — see `AppEnvironment`.
 final class TeslaAPIService: VehicleServicing {
