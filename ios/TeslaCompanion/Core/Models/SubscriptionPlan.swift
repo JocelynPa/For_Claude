@@ -9,6 +9,8 @@ struct SubscriptionPlan: Identifiable, Hashable {
 }
 
 extension SubscriptionPlan {
+    static let trialDays = 7
+
     static let monthly = SubscriptionPlan(
         id: "premium_monthly",
         title: "Mensuel",
