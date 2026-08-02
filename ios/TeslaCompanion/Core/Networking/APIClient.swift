@@ -47,6 +47,11 @@ final class APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method
+        // All of this API's GET responses are live vehicle/session state
+        // (Sentry status, timeline) — never something the app should show
+        // stale, so bypass URLCache entirely rather than relying on the
+        // backend to send the right Cache-Control headers on every route.
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         // Only attach a JSON Content-Type when there's an actual body: bodyless
         // POSTs (honk, flash lights, charge start/stop...) with
         // Content-Type: application/json but no body are rejected by Fastify's

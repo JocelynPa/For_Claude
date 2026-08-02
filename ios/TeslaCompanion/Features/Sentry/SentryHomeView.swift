@@ -14,7 +14,7 @@ struct SentryHomeView: View {
                     if let vehicle {
                         VehicleIdentityHeader(vehicle: vehicle)
                         SentryStatusBanner(isActive: sentryModeBinding.wrappedValue)
-                        Toggle("Activer Sentry Mode", isOn: sentryModeBinding)
+                        Toggle("Activer Sentinel", isOn: sentryModeBinding)
                             .tint(AppTheme.Colors.accent)
                             .disabled(isTogglingSentry)
                             .padding(.horizontal, AppSpacing.xs)
@@ -41,7 +41,7 @@ struct SentryHomeView: View {
                                 .foregroundStyle(AppTheme.Colors.textSecondary)
                         } else {
                             if events.contains(where: { $0.batteryLevelPercent != nil }) {
-                                Text("La conso affichée est celle du véhicule pendant la session, pas uniquement celle de Sentry Mode (dérive naturelle à l'arrêt incluse).")
+                                Text("La conso affichée est celle du véhicule pendant la session, pas uniquement celle de Sentinel (dérive naturelle à l'arrêt incluse).")
                                     .font(AppFont.caption())
                                     .foregroundStyle(AppTheme.Colors.textSecondary)
                             }
@@ -52,7 +52,7 @@ struct SentryHomeView: View {
                 .padding(AppSpacing.md)
             }
             .background(AppTheme.Colors.background)
-            .navigationTitle("Sentry Mode")
+            .navigationTitle("Sentinel")
             .task { await load() }
             .refreshable { await load() }
         }

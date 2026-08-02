@@ -21,7 +21,7 @@ struct LoginView: View {
                         .font(AppFont.largeTitle())
                         .foregroundStyle(AppTheme.Colors.textPrimary)
 
-                    Text("La surveillance Sentry Mode de votre Tesla,\nen temps réel.")
+                    Text("La surveillance Sentinel de votre Tesla,\nen temps réel.")
                         .font(AppFont.body())
                         .multilineTextAlignment(.center)
                         .foregroundStyle(AppTheme.Colors.textSecondary)
