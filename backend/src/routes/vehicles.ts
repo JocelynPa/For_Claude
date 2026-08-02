@@ -12,8 +12,8 @@ import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } fro
 // failure, then poll for up to ~30s (a single 4s wait wasn't enough in
 // practice — real vehicles can take much longer to fully wake and report
 // state). Returns null (rather than throwing) if the car still doesn't
-// respond — the mapper falls back to safe defaults for battery/climate in
-// that case. Every failure is logged since callers only ever see null,
+// respond — the mapper falls back to a safe default (Sentry off, no image)
+// in that case. Every failure is logged since callers only ever see null,
 // not why.
 async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
   try {
@@ -60,70 +60,13 @@ export async function vehicleRoutes(app: FastifyInstance) {
     );
   });
 
-  // Commands below go through `signedCommandFetch` (tesla-http-proxy), not
+  // Goes through `signedCommandFetch` (tesla-http-proxy), not
   // `fleetApiFetch` directly — Tesla silently rejects unsigned command
   // requests on any vehicle enforcing the Vehicle Command Protocol. See
-  // backend/keys/README.md for how to run the proxy.
-  const lockBody = z.object({ locked: z.boolean() });
-  app.post("/vehicles/:id/command/lock", async (request) => {
-    const { id } = request.params as { id: string };
-    const { locked } = lockBody.parse(request.body);
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/${locked ? "door_lock" : "door_unlock"}`, token, {
-      method: "POST",
-    });
-  });
-
-  const climateBody = z.object({ on: z.boolean(), targetTempC: z.number() });
-  app.post("/vehicles/:id/command/climate", async (request) => {
-    const { id } = request.params as { id: string };
-    const { on, targetTempC } = climateBody.parse(request.body);
-    const token = await getValidAccessToken(request.userId!);
-    if (on) {
-      await signedCommandFetch(`/vehicles/${id}/command/set_temps`, token, {
-        method: "POST",
-        body: JSON.stringify({ driver_temp: targetTempC, passenger_temp: targetTempC }),
-      });
-      return signedCommandFetch(`/vehicles/${id}/command/auto_conditioning_start`, token, { method: "POST" });
-    }
-    return signedCommandFetch(`/vehicles/${id}/command/auto_conditioning_stop`, token, { method: "POST" });
-  });
-
-  const chargeLimitBody = z.object({ percent: z.number().min(50).max(100) });
-  app.post("/vehicles/:id/command/charge-limit", async (request) => {
-    const { id } = request.params as { id: string };
-    const { percent } = chargeLimitBody.parse(request.body);
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/set_charge_limit`, token, {
-      method: "POST",
-      body: JSON.stringify({ percent }),
-    });
-  });
-
-  app.post("/vehicles/:id/command/charge-start", async (request) => {
-    const { id } = request.params as { id: string };
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/charge_start`, token, { method: "POST" });
-  });
-
-  app.post("/vehicles/:id/command/charge-stop", async (request) => {
-    const { id } = request.params as { id: string };
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/charge_stop`, token, { method: "POST" });
-  });
-
-  app.post("/vehicles/:id/command/flash-lights", async (request) => {
-    const { id } = request.params as { id: string };
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/flash_lights`, token, { method: "POST" });
-  });
-
-  app.post("/vehicles/:id/command/honk-horn", async (request) => {
-    const { id } = request.params as { id: string };
-    const token = await getValidAccessToken(request.userId!);
-    return signedCommandFetch(`/vehicles/${id}/command/honk_horn`, token, { method: "POST" });
-  });
-
+  // backend/keys/README.md for how to run the proxy. This is the only
+  // vehicle command the app itself still issues directly — honk/flash/lock
+  // are fired by the Fleet Telemetry ingestor instead (see
+  // src/telemetry/ingestor.ts), not through an HTTP route.
   const setSentryModeBody = z.object({ on: z.boolean() });
   app.post("/vehicles/:id/command/set-sentry-mode", async (request) => {
     const { id } = request.params as { id: string };
@@ -134,19 +77,6 @@ export async function vehicleRoutes(app: FastifyInstance) {
       body: JSON.stringify({ on }),
     });
   });
-
-  // Tesla's Fleet API doesn't expose charging/driving history directly —
-  // that would need a background poller snapshotting vehicle_data over
-  // time. Left as stubs; the iOS app falls back to mock data for these.
-  app.get("/vehicles/:id/charging-sessions", async () => []);
-  app.get("/vehicles/:id/driving-sessions", async () => []);
-  app.get("/vehicles/:id/summary", async () => ({
-    month: new Date().toISOString(),
-    distanceKm: 0,
-    energyCost: 0,
-    co2SavedKg: 0,
-    averageEfficiencyWhPerKm: 0,
-  }));
 
   // Sentry timeline: populated by the Fleet Telemetry ingestor
   // (src/telemetry/ingestor.js), not polled here — this just reads what's

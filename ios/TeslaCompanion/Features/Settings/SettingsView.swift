@@ -9,7 +9,6 @@ struct SettingsView: View {
     @State private var sentryAutoAction: SentryAutoAction = .none
     @State private var wheelStyle: WheelStyle = .defaultWheels
     @AppStorage("sentry_notifications_enabled") private var sentryNotifications = true
-    @AppStorage("driving_reports_enabled") private var drivingReports = true
 
     var body: some View {
         NavigationStack {
@@ -31,7 +30,6 @@ struct SettingsView: View {
 
                 Section("Notifications") {
                     Toggle("Alertes Sentry Mode", isOn: $sentryNotifications)
-                    Toggle("Rapports de conduite", isOn: $drivingReports)
                 }
 
                 Section {
@@ -75,7 +73,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Sécurité")
                 } footer: {
-                    Text("Requis pour que les commandes (verrouillage, climatisation…) fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
+                    Text("Requis pour que la bascule Sentry Mode et l'action automatique fonctionnent. Ouvre l'app Tesla pour approuver l'appairage.")
                 }
 
                 Section("Compte") {
