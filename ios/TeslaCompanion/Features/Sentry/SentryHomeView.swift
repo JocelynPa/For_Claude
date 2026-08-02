@@ -6,6 +6,7 @@ struct SentryHomeView: View {
     @State private var events: [SentryTimelineEntry] = []
     @State private var isLoading = true
     @State private var isTogglingSentry = false
+    @State private var loadError: String?
 
     var body: some View {
         NavigationStack {
@@ -18,6 +19,12 @@ struct SentryHomeView: View {
                             .tint(AppTheme.Colors.accent)
                             .disabled(isTogglingSentry)
                             .padding(.horizontal, AppSpacing.xs)
+                    }
+
+                    if let loadError {
+                        Text("Échec de l'actualisation : \(loadError)")
+                            .font(AppFont.caption())
+                            .foregroundStyle(AppTheme.Colors.danger)
                     }
 
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -33,7 +40,7 @@ struct SentryHomeView: View {
                             }
                         }
 
-                        if isLoading {
+                        if isLoading && events.isEmpty {
                             ProgressView().frame(maxWidth: .infinity).padding(.vertical, AppSpacing.lg)
                         } else if events.isEmpty {
                             Text("Aucun événement Sentry pour le moment.")
@@ -60,12 +67,18 @@ struct SentryHomeView: View {
 
     private func load() async {
         isLoading = true
-        // Only overwrite `vehicle` on a successful, non-empty fetch — a
-        // transient failure on pull-to-refresh (e.g. car asleep, brief Fleet
-        // API hiccup) shouldn't blank out the header/toggle that was already
-        // showing.
-        if let fetched = try? await environment.vehicleService.fetchVehicles().first {
-            vehicle = fetched
+        loadError = nil
+        // Only overwrite `vehicle` on a successful fetch — a transient
+        // failure on pull-to-refresh (e.g. car asleep, brief Fleet API
+        // hiccup) shouldn't blank out the header/toggle that was already
+        // showing. Errors are surfaced (not swallowed) so a refresh that
+        // silently fails doesn't just look like nothing happened.
+        do {
+            if let fetched = try await environment.vehicleService.fetchVehicles().first {
+                vehicle = fetched
+            }
+        } catch {
+            loadError = error.localizedDescription
         }
         guard let vehicleId = vehicle?.id else {
             isLoading = false
@@ -73,8 +86,10 @@ struct SentryHomeView: View {
         }
         // Same reasoning as `vehicle` above: a failed refresh shouldn't wipe
         // an already-populated events list.
-        if let fetched = try? await environment.sentryService.fetchEvents(vehicleId: vehicleId) {
-            events = fetched
+        do {
+            events = try await environment.sentryService.fetchEvents(vehicleId: vehicleId)
+        } catch {
+            loadError = error.localizedDescription
         }
         isLoading = false
     }
