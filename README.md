@@ -77,10 +77,11 @@ compilation.
 - **Rendu réel du véhicule** (modèle/couleur/jantes, via l'API compositeur
   d'images Tesla — non-officielle mais publique, utilisée par
   TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`)
-- **Paywall** Premium (plans mensuel/annuel), axé sur ce que Sentry Mode
-  apporte par rapport à l'app Tesla officielle — UI seule pour l'instant,
-  rien n'est réellement restreint côté backend (webhook RevenueCat prêt à
-  recevoir les événements, SDK d'achat non branché, voir plus bas)
+- **Paywall** Premium (plans mensuel/annuel, essai gratuit de 7 jours mis en
+  avant), axé sur ce que Sentry Mode apporte par rapport à l'app Tesla
+  officielle — UI seule pour l'instant, l'essai n'est pas réellement déclenché
+  ni suivi côté backend (webhook RevenueCat prêt à recevoir les événements,
+  SDK d'achat non branché, voir plus bas)
 - **Réglages** : abonnement, notifications, action Sentry automatique,
   style de jantes, appairage de la clé virtuelle, déconnexion
 
