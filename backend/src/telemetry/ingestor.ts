@@ -11,13 +11,21 @@ import { getValidAccessToken } from "../services/tokenStore.js";
 // protos/vehicle_connectivity.proto, telemetry/record.go).
 interface VehicleDataDatum {
   key: string;
-  value?: { sentryModeStateValue?: string };
+  value?: { sentryModeStateValue?: string; doubleValue?: number; intValue?: number; longValue?: number };
 }
 
 interface VehicleDataRecord {
   data?: VehicleDataDatum[];
   vin: string;
   createdAt: string;
+}
+
+function numericValue(value: VehicleDataDatum["value"]): number | undefined {
+  if (!value) return undefined;
+  if (typeof value.doubleValue === "number") return value.doubleValue;
+  if (typeof value.intValue === "number") return value.intValue;
+  if (typeof value.longValue === "number") return value.longValue;
+  return undefined;
 }
 
 // Real Tesla SentryModeState values (protos/vehicle_data.proto). Only Aware
@@ -45,6 +53,14 @@ function isEnabledState(state: string): boolean {
 // (we deliberately skip emitting anything the first time a VIN is seen).
 const lastSentryState = new Map<string, string>();
 
+// Latest known battery level (0-100, Fleet Telemetry "Soc" signal) per VIN
+// — stamped onto sentryModeEnabled/Disabled entries so the app can show
+// what was consumed during a session (see EventTimelineView). ⚠️ Field
+// name and value key ("Soc" / doubleValue) are based on third-party
+// fleet-telemetry docs, not verified end-to-end against a real vehicle
+// stream — same caveat as the /telemetry/subscribe route below.
+const lastBatteryLevel = new Map<string, number>();
+
 const AUTO_ACTION_COMMANDS: Record<string, string> = {
   honk: "honk_horn",
   flash: "flash_lights",
@@ -71,9 +87,15 @@ async function actOnActivity(vin: string): Promise<void> {
 
 async function handleVehicleDataMessage(raw: string): Promise<void> {
   const payload = JSON.parse(raw) as VehicleDataRecord;
+  if (!payload.vin) return;
+
+  const socDatum = payload.data?.find((entry) => entry.key === "Soc");
+  const socLevel = numericValue(socDatum?.value);
+  if (socLevel !== undefined) lastBatteryLevel.set(payload.vin, Math.round(socLevel));
+
   const datum = payload.data?.find((entry) => entry.key === "SentryMode");
   const state = datum?.value?.sentryModeStateValue;
-  if (!state || !payload.vin) return;
+  if (!state) return;
 
   const previous = lastSentryState.get(payload.vin);
   lastSentryState.set(payload.vin, state);
@@ -104,6 +126,7 @@ async function handleVehicleDataMessage(raw: string): Promise<void> {
       vin: payload.vin,
       date: new Date(payload.createdAt),
       kind: nowEnabled ? "sentryModeEnabled" : "sentryModeDisabled",
+      batteryLevelPercent: lastBatteryLevel.get(payload.vin) ?? null,
     },
   });
 }

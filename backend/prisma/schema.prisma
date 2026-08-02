@@ -47,6 +47,12 @@ model SentryTimelineEntry {
   kind                String // vehicleOnline | vehicleOffline | sentryModeEnabled | sentryModeDisabled | activityDetected
   activityDescription String?
   awarenessLevel      String? // aware | panic — only set when kind == activityDetected
+  // Battery level (0-100) at the time of this entry, from the Fleet
+  // Telemetry "Soc" signal — only set on sentryModeEnabled/Disabled
+  // entries. Paired client-side to show what was consumed during a Sentry
+  // session (see EventTimelineView) — this is total vehicle consumption
+  // while parked with Sentry on, not draw isolated to Sentry itself.
+  batteryLevelPercent Int?
   isNew               Boolean  @default(true)
   createdAt           DateTime @default(now())
 
