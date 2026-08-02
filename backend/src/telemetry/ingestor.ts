@@ -20,12 +20,6 @@ interface VehicleDataRecord {
   createdAt: string;
 }
 
-interface ConnectivityRecordMessage {
-  vin: string;
-  status?: "CONNECTED" | "DISCONNECTED" | "UNKNOWN";
-  createdAt: string;
-}
-
 // Real Tesla SentryModeState values (protos/vehicle_data.proto). Only Aware
 // and Panic are surfaced as an "activity detected" entry; Idle/Armed/Quiet
 // just move the enabled/disabled needle, matching what the reference
@@ -50,7 +44,6 @@ function isEnabledState(state: string): boolean {
 // while the ingestor is down, and won't re-emit a stale one on startup
 // (we deliberately skip emitting anything the first time a VIN is seen).
 const lastSentryState = new Map<string, string>();
-const lastConnectivity = new Map<string, string>();
 
 const AUTO_ACTION_COMMANDS: Record<string, string> = {
   honk: "honk_horn",
@@ -115,28 +108,15 @@ async function handleVehicleDataMessage(raw: string): Promise<void> {
   });
 }
 
-async function handleConnectivityMessage(raw: string): Promise<void> {
-  const payload = JSON.parse(raw) as ConnectivityRecordMessage;
-  if (!payload.vin || !payload.status) return;
-
-  const previous = lastConnectivity.get(payload.vin);
-  lastConnectivity.set(payload.vin, payload.status);
-  if (previous === undefined || previous === payload.status) return;
-
-  await prisma.sentryTimelineEntry.create({
-    data: {
-      vin: payload.vin,
-      date: new Date(payload.createdAt),
-      kind: payload.status === "CONNECTED" ? "vehicleOnline" : "vehicleOffline",
-    },
-  });
-}
-
 // Subscribes to the fleet-telemetry Redis dispatcher (see
 // deploy/fleet-telemetry-config.json) and turns the raw signal stream into
 // SentryTimelineEntry rows. No-ops if REDIS_URL isn't set — the backend
 // runs fine without Fleet Telemetry configured, the Sentry timeline is just
 // empty until it is (see deploy/README.md).
+//
+// Connectivity (vehicleOnline/vehicleOffline) records are intentionally not
+// ingested: the car reconnects constantly (wifi/cellular handoff, sleep
+// cycles) and it flooded the timeline with entries nobody wanted to read.
 export async function startTelemetryIngestor(): Promise<void> {
   if (!env.REDIS_URL) {
     console.log("REDIS_URL not set — Fleet Telemetry ingestion disabled (Sentry timeline stays empty).");
@@ -148,14 +128,10 @@ export async function startTelemetryIngestor(): Promise<void> {
   await client.connect();
 
   const vPattern = `${env.FLEET_TELEMETRY_NAMESPACE}_V_*`;
-  const connectivityPattern = `${env.FLEET_TELEMETRY_NAMESPACE}_connectivity_*`;
 
   await client.pSubscribe(vPattern, (message) => {
     handleVehicleDataMessage(message).catch((error) => console.error("Failed to process V record", error));
   });
-  await client.pSubscribe(connectivityPattern, (message) => {
-    handleConnectivityMessage(message).catch((error) => console.error("Failed to process connectivity record", error));
-  });
 
-  console.log(`Fleet Telemetry ingestor listening on "${vPattern}" and "${connectivityPattern}"`);
+  console.log(`Fleet Telemetry ingestor listening on "${vPattern}"`);
 }

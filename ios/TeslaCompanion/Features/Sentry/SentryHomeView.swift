@@ -55,7 +55,13 @@ struct SentryHomeView: View {
 
     private func load() async {
         isLoading = true
-        vehicle = try? await environment.vehicleService.fetchVehicles().first
+        // Only overwrite `vehicle` on a successful, non-empty fetch — a
+        // transient failure on pull-to-refresh (e.g. car asleep, brief Fleet
+        // API hiccup) shouldn't blank out the header/toggle that was already
+        // showing.
+        if let fetched = try? await environment.vehicleService.fetchVehicles().first {
+            vehicle = fetched
+        }
         guard let vehicleId = vehicle?.id else {
             isLoading = false
             return
