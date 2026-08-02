@@ -12,13 +12,13 @@ struct PaywallView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
                     VStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: "shield.lefthalf.filled")
                             .font(.system(size: 36))
                             .foregroundStyle(AppTheme.Colors.accent)
                         Text("Passez à Premium")
                             .font(AppFont.largeTitle())
                             .foregroundStyle(AppTheme.Colors.textPrimary)
-                        Text("Débloquez toutes les fonctionnalités de contrôle et de surveillance.")
+                        Text("Débloquez la surveillance Sentry en temps réel.")
                             .font(AppFont.body())
                             .multilineTextAlignment(.center)
                             .foregroundStyle(AppTheme.Colors.textSecondary)

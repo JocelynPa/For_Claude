@@ -9,7 +9,6 @@ import UIKit
 @MainActor
 final class AuthManager: NSObject, ObservableObject {
     @Published private(set) var isAuthenticated: Bool
-    @Published private(set) var currentUser: AppUser?
 
     private let tokenKey = "tesla_companion_access_token"
     private var webAuthSession: ASWebAuthenticationSession?
@@ -57,7 +56,6 @@ final class AuthManager: NSObject, ObservableObject {
     func signOut() {
         KeychainStore.delete(tokenKey)
         isAuthenticated = false
-        currentUser = nil
     }
 }
 

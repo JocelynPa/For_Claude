@@ -1,31 +1,39 @@
 # Tesla Companion
 
-App iOS native (SwiftUI) qui réunit le contrôle véhicule et les statistiques
-façon **TezLab**, et un journal d'activité Sentry façon **Sentry Mode Pro**,
-dans une interface premium **dark-only** (anthracite profond, accent
-champagne gold, rouge Tesla réservé aux alertes Sentry) proche du cockpit de
-l'app Tesla officielle. Le véhicule affiché est le rendu réel de la voiture
-du propriétaire (modèle, couleur, jantes) via l'API compositeur d'images de
-Tesla, pas une icône générique.
+App iOS native (SwiftUI), exclusivement dédiée à **Sentry Mode** : statut en
+direct, bascule on/off, journal d'activité en timeline (façon **Sentry Mode
+Pro**), action automatique déclenchée par une détection, dans une interface
+premium **dark-only** (anthracite profond, accent champagne gold, rouge
+Tesla réservé aux alertes) proche du cockpit de l'app Tesla officielle. Le
+véhicule affiché est le rendu réel de la voiture du propriétaire (modèle,
+couleur, jantes) via l'API compositeur d'images de Tesla, pas une icône
+générique.
 
-> Ce dépôt repart de zéro : un précédent scaffold en Expo/React Native a été
-> retiré. Cette version est un vrai projet iOS natif.
+Le contrôle véhicule complet (verrouillage, climatisation, charge…) et les
+statistiques (déjà couverts par l'app Tesla officielle) ont été
+volontairement retirés — voir la discussion sur le sujet dans l'historique
+git si besoin de les réintroduire. L'abonnement Premium, lui, reste —
+adapté pour mettre en avant ce que Sentry Mode apporte (timeline temps
+réel, action automatique, notifications), pas les fonctionnalités
+retirées.
 
 ## Structure
 
 ```
 ios/          Application SwiftUI (projet généré via XcodeGen)
-backend/      API Fastify/TypeScript : OAuth Tesla, proxy Fleet API, webhook RevenueCat
-deploy/       Déploiement Docker Compose (NAS, VPS...) : backend + Postgres + proxy de signature + Caddy/TLS
+backend/      API Fastify/TypeScript : OAuth Tesla, proxy Fleet API, ingestion Fleet Telemetry, webhook RevenueCat
+deploy/       Déploiement Docker Compose (NAS, VPS...) : backend + Postgres + proxy de signature + Fleet Telemetry
 ```
 
 ## Pourquoi un backend ?
 
 Tesla ne permet pas d'échanger le code OAuth directement depuis un client
 mobile : le `client_secret` doit rester côté serveur, et les commandes
-véhicule (verrouillage, climatisation…) doivent être signées avec une paire
-de clés dont la clé publique est hébergée sur un domaine. Le dossier
-`backend/` fait ce travail et sert de proxy entre l'app et la Fleet API.
+véhicule signées (bascule Sentry Mode, action automatique) nécessitent une
+paire de clés Vehicle Command dont la clé publique est hébergée sur un
+domaine. Le dossier `backend/` fait ce travail et sert de proxy entre l'app
+et la Fleet API, en plus d'ingérer le flux Fleet Telemetry pour la timeline
+Sentry.
 
 ## Démarrer l'app iOS
 
@@ -41,7 +49,7 @@ open TeslaCompanion.xcodeproj
 
 Lancez le run sur simulateur : l'app utilise par défaut des services mock
 (`MockVehicleService`, `MockSentryService`, voir `App/AppEnvironment.swift`)
-avec un véhicule et des événements Sentry factices, donc **toutes les écrans
+avec un véhicule et des événements Sentry factices, donc **les deux écrans
 sont navigables sans backend ni compte Tesla**. Pour brancher les vraies
 données une fois le backend déployé, remplacer les services par défaut dans
 `AppEnvironment` par `TeslaAPIService(auth:)`.
@@ -54,13 +62,6 @@ compilation.
 ### Fonctionnalités couvertes (v1)
 
 - **Connexion Tesla** via `ASWebAuthenticationSession` (OAuth géré par le backend)
-- **Dashboard véhicule** : rendu réel du véhicule (modèle/couleur/jantes,
-  via l'API compositeur d'images Tesla — non-officielle mais publique,
-  utilisée par TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`),
-  batterie/autonomie, verrouillage, climatisation (avec réglage de
-  consigne), phares, klaxon, limite de charge
-- **Statistiques** : résumé mensuel (distance, coût, CO₂ évité), graphique
-  d'efficacité (Swift Charts), historique de charge
 - **Sentry Mode** : statut actif/inactif (pastille rouge animée, données
   réelles via `vehicle_state.sentry_mode`) avec bascule pour
   activer/désactiver directement depuis l'app, journal d'activité en
@@ -73,15 +74,21 @@ compilation.
 - **Action automatique** configurable (klaxon, phares, verrouillage, ou
   aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
   même app fermée. Voir `deploy/README.md` §12
-- **Paywall** premium (plans mensuel/annuel) et **Réglages** (notifications,
-  action Sentry automatique, déconnexion)
+- **Rendu réel du véhicule** (modèle/couleur/jantes, via l'API compositeur
+  d'images Tesla — non-officielle mais publique, utilisée par
+  TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`)
+- **Paywall** Premium (plans mensuel/annuel), axé sur ce que Sentry Mode
+  apporte par rapport à l'app Tesla officielle — UI seule pour l'instant,
+  rien n'est réellement restreint côté backend (webhook RevenueCat prêt à
+  recevoir les événements, SDK d'achat non branché, voir plus bas)
+- **Réglages** : abonnement, notifications, action Sentry automatique,
+  style de jantes, appairage de la clé virtuelle, déconnexion
 
 ### Ce qui reste à faire pour une v1 réelle
 
-- Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only)
-- Poller `vehicle_data` côté backend pour peupler charge/conduite réels
-  (Tesla ne fournit pas cet historique nativement, cf.
-  `backend/src/routes/vehicles.ts`)
+- Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only ;
+  `subscriptionStatus` sur `User` est déjà mis à jour par le webhook
+  RevenueCat, mais rien ne le lit encore pour restreindre une fonctionnalité)
 - La timeline Sentry a sa propre voie réelle (Fleet Telemetry, voir
   `deploy/README.md` §11) mais reste non déployée par défaut ; le champ
   `firedActions` de chaque entrée (ce que **Tesla lui-même** a déclenché,
@@ -100,6 +107,11 @@ compilation.
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Icône d'app, écran de lancement personnalisé, tests
+- Avant toute diffusion au-delà d'un usage personnel : politique de
+  confidentialité/RGPD (l'app traite des données de compte et de véhicule),
+  et vérification du statut de l'API compositeur d'images vis-à-vis des
+  conditions d'utilisation Tesla Developer (endpoint non documenté
+  officiellement)
 
 ## Démarrer le backend
 
@@ -164,20 +176,20 @@ npm run dev
 ```
 
 Voir `backend/keys/README.md` pour générer la paire de clés Vehicle Command
-requise par Tesla (nécessaire pour les commandes signées comme le
-verrouillage ou la climatisation).
+requise par Tesla (nécessaire pour les commandes signées comme la bascule
+Sentry Mode).
 
 ### Déploiement permanent (au lieu de `npm run dev` + tunnel)
 
 Pour que le backend tourne en continu sans dépendre de votre machine (et
 sans ngrok), voir `deploy/README.md` : Docker Compose avec Postgres,
-`tesla-http-proxy` et Caddy (TLS Let's Encrypt automatique) derrière un vrai
-domaine — testé pour un NAS Docker, portable vers un VPS/AWS.
+`tesla-http-proxy`, Fleet Telemetry, derrière un vrai domaine via votre
+reverse proxy existant (Nginx Proxy Manager) — testé pour un NAS Docker,
+portable vers un VPS/AWS.
 
 ## Design
 
-Le système de design (`ios/TeslaCompanion/DesignSystem/`) est volontairement
-minimal : palette à deux tons (surface/texte) + un seul accent indigo,
+Le système de design (`ios/TeslaCompanion/DesignSystem/`) est dark-only,
+premium et minimal : palette anthracite/champagne gold/rouge Tesla,
 composants réutilisables (`Card`, `PrimaryButton`, `StatTile`, `PillBadge`,
-`SectionHeader`), pas d'ornementation superflue — l'objectif est un rendu
-proche d'une app Apple native plutôt qu'une réplique du rouge Tesla.
+`SectionHeader`), pas d'ornementation superflue.

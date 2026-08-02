@@ -11,7 +11,8 @@ struct SentryHomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    if vehicle != nil {
+                    if let vehicle {
+                        VehicleIdentityHeader(vehicle: vehicle)
                         SentryStatusBanner(isActive: sentryModeBinding.wrappedValue)
                         Toggle("Activer Sentry Mode", isOn: sentryModeBinding)
                             .tint(AppTheme.Colors.accent)
@@ -82,6 +83,51 @@ struct SentryHomeView: View {
         defer { isTogglingSentry = false }
         if (try? await environment.vehicleService.setSentryMode(vehicleId, on: on)) != nil {
             vehicle?.isSentryModeActive = on
+        }
+    }
+}
+
+/// Small identification header — this app now only ever shows one vehicle's
+/// Sentry status, but a thumbnail + name still makes it clear which car
+/// that is at a glance, without the full control card the Dashboard used to
+/// have.
+private struct VehicleIdentityHeader: View {
+    let vehicle: Vehicle
+
+    var body: some View {
+        HStack(spacing: AppSpacing.sm) {
+            ZStack {
+                RadialGradient(
+                    colors: [AppTheme.Colors.accent.opacity(0.16), .clear],
+                    center: .center,
+                    startRadius: 4,
+                    endRadius: 40
+                )
+                if let imageUrl = vehicle.imageUrl {
+                    AsyncImage(url: imageUrl) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFit()
+                        } else {
+                            Image(systemName: "car.side.fill")
+                                .foregroundStyle(AppTheme.Colors.textSecondary)
+                        }
+                    }
+                } else {
+                    Image(systemName: "car.side.fill")
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                }
+            }
+            .frame(width: 56, height: 56)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(vehicle.displayName)
+                    .font(AppFont.headline())
+                    .foregroundStyle(AppTheme.Colors.textPrimary)
+                Text(vehicle.vin.suffix(6).uppercased())
+                    .font(AppFont.caption())
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
+            }
+            Spacer()
         }
     }
 }
