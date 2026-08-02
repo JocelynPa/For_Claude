@@ -22,6 +22,7 @@ struct PaywallView: View {
                             .font(AppFont.body())
                             .multilineTextAlignment(.center)
                             .foregroundStyle(AppTheme.Colors.textSecondary)
+                        PillBadge(text: "\(SubscriptionPlan.trialDays) jours d'essai gratuit", style: .accent)
                     }
                     .padding(.top, AppSpacing.md)
 
@@ -46,9 +47,14 @@ struct PaywallView: View {
                         }
                     }
 
-                    PrimaryButton(title: "Continuer", isLoading: isPurchasing) {
+                    PrimaryButton(title: "Essayer \(SubscriptionPlan.trialDays) jours gratuitement", isLoading: isPurchasing) {
                         purchase()
                     }
+
+                    Text("Puis \(selectedPlan.price)\(selectedPlan.period). Résiliable à tout moment avant la fin de l'essai, sans engagement.")
+                        .font(AppFont.caption())
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(AppTheme.Colors.textSecondary)
 
                     Button("Restaurer mes achats") {}
                         .font(AppFont.caption())
@@ -98,6 +104,9 @@ struct PlanCard: View {
                         .font(AppFont.caption())
                         .foregroundStyle(AppTheme.Colors.textSecondary)
                 }
+                Text("après l'essai gratuit")
+                    .font(AppFont.caption())
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppSpacing.md)
