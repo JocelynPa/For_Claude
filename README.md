@@ -68,7 +68,10 @@ compilation.
   timeline (Sentry activé/désactivé, activité détectée avec niveau
   Aware/Panic — les transitions en ligne/hors ligne du véhicule ne sont
   plus affichées, trop verbeuses) — texte uniquement, pas d'image ni de
-  vidéo. Chaque session Sentry affiche aussi la conso batterie du
+  vidéo (Tesla n'expose ni l'un ni l'autre via la Fleet API) ; toucher une
+  activité détectée ouvre plutôt l'app Tesla officielle pour visionner
+  l'enregistrement (lien best-effort non documenté par Tesla, voir
+  `AppConfig.swift`). Chaque session Sentry affiche aussi la conso batterie du
   véhicule pendant qu'elle était active (champ `Soc`, pas isolé à Sentry
   lui-même — voir la nuance affichée dans l'app). Alimentable en données
   réelles via **Tesla Fleet Telemetry** (le véhicule streame directement
