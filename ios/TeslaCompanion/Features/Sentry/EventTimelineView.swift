@@ -156,12 +156,15 @@ private struct StateChangeGroupCard: View {
 }
 
 /// The one entry type worth highlighting: text only (description, awareness
-/// level, and whatever action Sentry auto-fired, e.g. a horn) — no image or
-/// video, since Tesla exposes neither remotely for any app. Styled as a
+/// level, and whatever action Sentry auto-fired, e.g. a horn) — this app has
+/// no image or video of its own, since Tesla exposes neither remotely via
+/// the Fleet API. Tapping the row instead hands off to the Tesla app, where
+/// the actual clip lives (Sentry Mode's own alert history). Styled as a
 /// quiet elevated card with a colored accent edge rather than a full tinted
 /// fill, closer to how a premium native app reads.
 private struct ActivityDetectedCard: View {
     let entry: SentryTimelineEntry
+    @Environment(\.openURL) private var openURL
 
     /// Panic is Tesla's own escalated alert state — worth the same red used
     /// for the Sentry pulse elsewhere, not just another amber notice.
@@ -170,6 +173,13 @@ private struct ActivityDetectedCard: View {
     }
 
     var body: some View {
+        Button(action: openTeslaApp) {
+            content
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var content: some View {
         HStack(alignment: .top, spacing: 0) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(tint)
@@ -196,9 +206,14 @@ private struct ActivityDetectedCard: View {
 
                     Spacer(minLength: AppSpacing.sm)
 
-                    Text(entry.date.formatted(date: .omitted, time: .shortened))
-                        .font(AppFont.caption())
-                        .foregroundStyle(AppTheme.Colors.textSecondary)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(entry.date.formatted(date: .omitted, time: .shortened))
+                            .font(AppFont.caption())
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                    }
                 }
                 .padding(AppSpacing.md)
 
@@ -239,5 +254,16 @@ private struct ActivityDetectedCard: View {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                 .stroke(AppTheme.Colors.hairline, lineWidth: 1)
         )
+    }
+
+    /// ⚠️ Best-effort, not documented by Tesla (see AppConfig): opens the
+    /// Tesla app in general, not this specific clip — there's no known deep
+    /// link precise enough for that. Falls back to the App Store listing if
+    /// the app isn't installed.
+    private func openTeslaApp() {
+        guard let schemeURL = URL(string: AppConfig.teslaAppURLScheme) else { return }
+        openURL(schemeURL) { accepted in
+            if !accepted { openURL(AppConfig.teslaAppStoreURL) }
+        }
     }
 }
