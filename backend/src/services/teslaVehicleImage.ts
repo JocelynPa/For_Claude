@@ -107,10 +107,32 @@ const PAINT_CODE_BY_COLOR: Record<string, string> = {
 
 // vehicle_config.wheel_type (e.g. "Induction20") is a separate field from
 // option_codes and, unlike it, is actually populated by the Fleet API —
-// confirmed against a real Model Y. Only entries actually verified are
-// listed; anything else falls through to the manual override below.
+// confirmed against a real Model Y for the Induction20 entry specifically
+// (the exact string Tesla sends, cross-checked against the rendered wheels).
+//
+// The other entries below are best-effort, not the same tier of
+// confirmation: the option code (right-hand side) comes from the public
+// timdorr/tesla-api option code reference, but the wheel_type string
+// (left-hand side) is inferred from Tesla's own "<Name><InchSize>" naming
+// convention (matching how "Induction20" is formatted) rather than
+// independently observed from a real vehicle of that model. If it's wrong,
+// the lookup just misses (falls through to the manual override below or the
+// compositor's default wheels) — it can't render the *wrong* wheels, since
+// buildVehicleImageUrl's per-model option filtering (see getOptions) drops
+// any wheel code that doesn't match that model's known prefixes anyway. The
+// unmapped-wheel_type diagnostic log below will surface the real string the
+// next time an unmatched car is seen, so entries can be corrected over time.
 const WHEEL_CODE_BY_TYPE: Record<string, string> = {
-  Induction20: "WY20P",
+  Induction20: "WY20P", // Model Y — confirmed
+  Apollo19: "WY9S", // Model Y
+  Uberturbine21: "WY1S", // Model Y
+  Aero18: "W38B", // Model 3 (also used on some Model Y)
+  Photon18: "W38A", // Model 3 Highland
+  Sport19: "W39B", // Model 3
+  Tempest19: "WS90", // Model S Refresh
+  Arachnid21: "WS10", // Model S Refresh
+  Cyberstream20: "WX00", // Model X Refresh
+  Turbine22: "WX20", // Model X Refresh
 };
 
 // Returns null for car types the compositor doesn't support (Cybertruck —
