@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct SentryHomeView: View {
@@ -7,6 +8,7 @@ struct SentryHomeView: View {
     @State private var isLoading = true
     @State private var isTogglingSentry = false
     @State private var loadError: String?
+    @State private var loadTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -60,9 +62,22 @@ struct SentryHomeView: View {
             }
             .background(AppTheme.Colors.background)
             .navigationTitle("Sentinel")
-            .task { await load() }
-            .refreshable { await load() }
+            .task { await runLoad() }
+            .refreshable { await runLoad() }
         }
+    }
+
+    /// `.task` (on first appear) and `.refreshable` (on pull-to-refresh)
+    /// both call this. Without coordination, a pull-to-refresh right after
+    /// launch races the initial `.task` load — same endpoint, two in-flight
+    /// requests — and whichever loses the race can surface as a confusing
+    /// "cancelled" error. Cancelling any previous load before starting a new
+    /// one makes that explicit and expected instead.
+    private func runLoad() async {
+        loadTask?.cancel()
+        let task = Task { await load() }
+        loadTask = task
+        await task.value
     }
 
     private func load() async {
@@ -72,15 +87,16 @@ struct SentryHomeView: View {
         // failure on pull-to-refresh (e.g. car asleep, brief Fleet API
         // hiccup) shouldn't blank out the header/toggle that was already
         // showing. Errors are surfaced (not swallowed) so a refresh that
-        // silently fails doesn't just look like nothing happened.
+        // silently fails doesn't just look like nothing happened — except
+        // cancellation, which just means a newer load superseded this one.
         do {
             if let fetched = try await environment.vehicleService.fetchVehicles().first {
                 vehicle = fetched
             }
         } catch {
-            loadError = error.localizedDescription
+            if !Self.isCancellation(error) { loadError = error.localizedDescription }
         }
-        guard let vehicleId = vehicle?.id else {
+        guard let vehicleId = vehicle?.id, !Task.isCancelled else {
             isLoading = false
             return
         }
@@ -89,9 +105,13 @@ struct SentryHomeView: View {
         do {
             events = try await environment.sentryService.fetchEvents(vehicleId: vehicleId)
         } catch {
-            loadError = error.localizedDescription
+            if !Self.isCancellation(error) { loadError = error.localizedDescription }
         }
         isLoading = false
+    }
+
+    private static func isCancellation(_ error: Error) -> Bool {
+        error is CancellationError || (error as? URLError)?.code == .cancelled
     }
 
     private func markAllSeen() async {
