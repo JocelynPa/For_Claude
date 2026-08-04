@@ -18,12 +18,6 @@ model User {
   // Fired automatically by the Fleet Telemetry ingestor when it records an
   // "activityDetected" entry (aware/panic) — none | honk | flash | lock.
   sentryAutoAction   String           @default("none")
-  // Tesla's option_codes field (needed to render the exact wheels in the
-  // vehicle image) isn't populated by the Fleet API — see
-  // backend/src/services/teslaVehicleImage.ts. Manually set instead
-  // (e.g. "WY20P" for Model Y 20" Induction wheels); null falls back to
-  // the compositor's default wheels.
-  wheelOptionCode    String?
   createdAt          DateTime         @default(now())
   teslaCredential    TeslaCredential?
 }
