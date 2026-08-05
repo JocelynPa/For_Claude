@@ -3,12 +3,15 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var auth: AuthManager
     @State private var showLaunchAnimation = true
+    @AppStorage("has_seen_onboarding") private var hasSeenOnboarding = false
 
     var body: some View {
         ZStack {
             Group {
                 if auth.isAuthenticated {
                     MainTabView()
+                } else if !hasSeenOnboarding {
+                    OnboardingView(onFinish: { hasSeenOnboarding = true })
                 } else {
                     LoginView()
                 }
