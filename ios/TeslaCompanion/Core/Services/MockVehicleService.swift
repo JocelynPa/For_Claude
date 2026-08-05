@@ -10,12 +10,7 @@ final class MockVehicleService: VehicleServicing {
         displayName: "Mon Model 3",
         vin: "5YJ3E1EA0PF000000",
         state: .online,
-        isSentryModeActive: true,
-        // Same compositor endpoint the backend builds for real vehicles
-        // (see backend/src/services/teslaVehicleImage.ts) — a minimal,
-        // valid Model 3 render, so Previews/Simulator show a real vehicle
-        // image rather than a blank space.
-        imageUrl: URL(string: "https://static-assets.tesla.com/configurator/compositor?bkba_opt=1&file_type=png&model=m3&options=IN3PB&view=STUD_3QTR&size=800")
+        isSentryModeActive: true
     )
 
     func fetchVehicles() async throws -> [Vehicle] {

@@ -7,7 +7,6 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var tokenCopied = false
     @State private var sentryAutoAction: SentryAutoAction = .none
-    @State private var wheelStyle: WheelStyle = .defaultWheels
     @AppStorage("sentry_notifications_enabled") private var sentryNotifications = true
 
     var body: some View {
@@ -42,18 +41,6 @@ struct SettingsView: View {
                     Text("Sentinel")
                 } footer: {
                     Text("Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée.")
-                }
-
-                Section {
-                    Picker("Jantes", selection: wheelStyleBinding) {
-                        ForEach(WheelStyle.allCases) { style in
-                            Text(style.label).tag(style)
-                        }
-                    }
-                } header: {
-                    Text("Véhicule")
-                } footer: {
-                    Text("Tesla ne fournit plus les jantes réelles via l'API — à définir manuellement pour que la photo du véhicule les affiche correctement.")
                 }
 
                 Section {
@@ -118,7 +105,6 @@ struct SettingsView: View {
             .task {
                 if let settings = try? await environment.settingsService.fetchSettings() {
                     sentryAutoAction = settings.sentryAutoAction
-                    wheelStyle = WheelStyle(optionCode: settings.wheelOptionCode)
                 }
             }
         }
@@ -138,16 +124,6 @@ struct SettingsView: View {
             set: { newValue in
                 sentryAutoAction = newValue
                 Task { try? await environment.settingsService.setSentryAutoAction(newValue) }
-            }
-        )
-    }
-
-    private var wheelStyleBinding: Binding<WheelStyle> {
-        Binding(
-            get: { wheelStyle },
-            set: { newValue in
-                wheelStyle = newValue
-                Task { try? await environment.settingsService.setWheelOptionCode(newValue.optionCode) }
             }
         )
     }

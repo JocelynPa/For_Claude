@@ -153,19 +153,8 @@ private struct VehicleIdentityHeader: View {
                     startRadius: 4,
                     endRadius: 40
                 )
-                if let imageUrl = vehicle.imageUrl {
-                    AsyncImage(url: imageUrl) { phase in
-                        if case .success(let image) = phase {
-                            image.resizable().scaledToFit()
-                        } else {
-                            Image(systemName: "car.side.fill")
-                                .foregroundStyle(AppTheme.Colors.textSecondary)
-                        }
-                    }
-                } else {
-                    Image(systemName: "car.side.fill")
-                        .foregroundStyle(AppTheme.Colors.textSecondary)
-                }
+                Image(systemName: "car.side.fill")
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
             }
             .frame(width: 56, height: 56)
 
