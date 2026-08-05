@@ -12,8 +12,8 @@ import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } fro
 // failure, then poll for up to ~30s (a single 4s wait wasn't enough in
 // practice — real vehicles can take much longer to fully wake and report
 // state). Returns null (rather than throwing) if the car still doesn't
-// respond — the mapper falls back to a safe default (Sentry off, no image)
-// in that case. Every failure is logged since callers only ever see null,
+// respond — the mapper falls back to a safe default (Sentry off) in that
+// case. Every failure is logged since callers only ever see null,
 // not why.
 async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
   try {
@@ -48,14 +48,11 @@ export async function vehicleRoutes(app: FastifyInstance) {
 
   app.get("/vehicles", async (request) => {
     const token = await getValidAccessToken(request.userId!);
-    const [list, user] = await Promise.all([
-      fleetApiFetch<TeslaVehicleListItem[]>("/vehicles", token),
-      prisma.user.findUnique({ where: { id: request.userId! } }),
-    ]);
+    const list = await fleetApiFetch<TeslaVehicleListItem[]>("/vehicles", token);
     return Promise.all(
       list.map(async (item) => {
         const data = await fetchVehicleDataWithWake(String(item.id), token);
-        return mapTeslaVehicle(item, data, user?.wheelOptionCode);
+        return mapTeslaVehicle(item, data);
       })
     );
   });

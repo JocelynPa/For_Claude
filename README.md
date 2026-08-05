@@ -4,10 +4,7 @@ App iOS native (SwiftUI), exclusivement dédiée à **Sentry Mode** : statut en
 direct, bascule on/off, journal d'activité en timeline (façon **Sentry Mode
 Pro**), action automatique déclenchée par une détection, dans une interface
 premium **dark-only** (anthracite profond, accent champagne gold, rouge
-Tesla réservé aux alertes) proche du cockpit de l'app Tesla officielle. Le
-véhicule affiché est le rendu réel de la voiture du propriétaire (modèle,
-couleur, jantes) via l'API compositeur d'images de Tesla, pas une icône
-générique.
+Tesla réservé aux alertes) proche du cockpit de l'app Tesla officielle.
 
 Le contrôle véhicule complet (verrouillage, climatisation, charge…) et les
 statistiques (déjà couverts par l'app Tesla officielle) ont été
@@ -80,16 +77,13 @@ compilation.
 - **Action automatique** configurable (klaxon, phares, verrouillage, ou
   aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
   même app fermée. Voir `deploy/README.md` §12
-- **Rendu réel du véhicule** (modèle/couleur/jantes, via l'API compositeur
-  d'images Tesla — non-officielle mais publique, utilisée par
-  TeslaMate/TeslaFi ; voir `backend/src/services/teslaVehicleImage.ts`)
 - **Paywall** Premium (plans mensuel/annuel, essai gratuit de 7 jours mis en
   avant), axé sur ce que Sentry Mode apporte par rapport à l'app Tesla
   officielle — UI seule pour l'instant, l'essai n'est pas réellement déclenché
   ni suivi côté backend (webhook RevenueCat prêt à recevoir les événements,
   SDK d'achat non branché, voir plus bas)
 - **Réglages** : abonnement, notifications, action Sentry automatique,
-  style de jantes, appairage de la clé virtuelle, déconnexion
+  appairage de la clé virtuelle, déconnexion
 
 ### Ce qui reste à faire pour une v1 réelle
 
@@ -113,12 +107,9 @@ compilation.
   l'historique git pour le réintroduire
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
-- Icône d'app, écran de lancement personnalisé, tests
+- Tests
 - Avant toute diffusion au-delà d'un usage personnel : politique de
-  confidentialité/RGPD (l'app traite des données de compte et de véhicule),
-  et vérification du statut de l'API compositeur d'images vis-à-vis des
-  conditions d'utilisation Tesla Developer (endpoint non documenté
-  officiellement)
+  confidentialité/RGPD (l'app traite des données de compte et de véhicule)
 
 ## Démarrer le backend
 
