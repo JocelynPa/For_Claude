@@ -8,18 +8,28 @@ datasource db {
 }
 
 model User {
-  id                 String           @id @default(uuid())
-  teslaSubject       String?          @unique
-  email              String           @unique
+  id                     String           @id @default(uuid())
+  teslaSubject           String?          @unique
+  email                  String           @unique
   // Written by the RevenueCat webhook (src/routes/subscriptions.ts) — the
   // paywall itself is UI-only (no SDK wired up, no feature actually
   // gated on this yet), see README.
-  subscriptionStatus String           @default("free")
+  subscriptionStatus     String           @default("free")
   // Fired automatically by the Fleet Telemetry ingestor when it records an
   // "activityDetected" entry (aware/panic) — none | honk | flash | lock.
-  sentryAutoAction   String           @default("none")
-  createdAt          DateTime         @default(now())
-  teslaCredential    TeslaCredential?
+  sentryAutoAction       String           @default("none")
+  // Scheduled Sentry activation window, applied server-side (see
+  // src/scheduler/sentrySchedule.ts) so it runs even with the app closed —
+  // start/end are "HH:mm" local to sentryScheduleTimezone; end < start
+  // means the window wraps past midnight. Days are ISO weekday numbers
+  // (1=Monday..7=Sunday) as a comma-separated string.
+  sentryScheduleEnabled  Boolean          @default(false)
+  sentryScheduleStart    String           @default("20:00")
+  sentryScheduleEnd      String           @default("07:00")
+  sentryScheduleDays     String           @default("1,2,3,4,5,6,7")
+  sentryScheduleTimezone String           @default("Europe/Paris")
+  createdAt              DateTime         @default(now())
+  teslaCredential        TeslaCredential?
 }
 
 model TeslaCredential {

@@ -15,12 +15,12 @@ struct SentryHomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if let vehicle {
-                        VehicleIdentityHeader(vehicle: vehicle)
-                        SentryStatusBanner(isActive: sentryModeBinding.wrappedValue)
-                        Toggle("Activer Sentinel", isOn: sentryModeBinding)
-                            .tint(AppTheme.Colors.accent)
-                            .disabled(isTogglingSentry)
-                            .padding(.horizontal, AppSpacing.xs)
+                        SentinelActivationCard(
+                            vehicle: vehicle,
+                            isActive: vehicle.isSentryModeActive,
+                            isToggling: isTogglingSentry,
+                            onToggle: { Task { await setSentryMode(!vehicle.isSentryModeActive) } }
+                        )
                     }
 
                     if let loadError {
@@ -120,53 +120,12 @@ struct SentryHomeView: View {
         events = events.map { var event = $0; event.isNew = false; return event }
     }
 
-    private var sentryModeBinding: Binding<Bool> {
-        Binding(
-            get: { vehicle?.isSentryModeActive ?? false },
-            set: { newValue in Task { await setSentryMode(newValue) } }
-        )
-    }
-
     private func setSentryMode(_ on: Bool) async {
         guard let vehicleId = vehicle?.id else { return }
         isTogglingSentry = true
         defer { isTogglingSentry = false }
         if (try? await environment.vehicleService.setSentryMode(vehicleId, on: on)) != nil {
             vehicle?.isSentryModeActive = on
-        }
-    }
-}
-
-/// Small identification header — this app now only ever shows one vehicle's
-/// Sentry status, but a thumbnail + name still makes it clear which car
-/// that is at a glance, without the full control card the Dashboard used to
-/// have.
-private struct VehicleIdentityHeader: View {
-    let vehicle: Vehicle
-
-    var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            ZStack {
-                RadialGradient(
-                    colors: [AppTheme.Colors.accent.opacity(0.16), .clear],
-                    center: .center,
-                    startRadius: 4,
-                    endRadius: 40
-                )
-                Image(systemName: "car.side.fill")
-                    .foregroundStyle(AppTheme.Colors.textSecondary)
-            }
-            .frame(width: 56, height: 56)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(vehicle.displayName)
-                    .font(AppFont.headline())
-                    .foregroundStyle(AppTheme.Colors.textPrimary)
-                Text(vehicle.vin.suffix(6).uppercased())
-                    .font(AppFont.caption())
-                    .foregroundStyle(AppTheme.Colors.textSecondary)
-            }
-            Spacer()
         }
     }
 }
