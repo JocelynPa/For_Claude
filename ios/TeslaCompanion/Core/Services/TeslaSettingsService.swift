@@ -19,4 +19,12 @@ final class TeslaSettingsService: SettingsServicing {
             authToken: auth.accessToken
         ) as AppSettings
     }
+
+    func setSentrySchedule(_ schedule: SentrySchedule) async throws {
+        let body = try JSONEncoder().encode(["sentrySchedule": schedule])
+        try await client.send(
+            Endpoint(path: "settings", method: "PATCH", body: body),
+            authToken: auth.accessToken
+        ) as AppSettings
+    }
 }

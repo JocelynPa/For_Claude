@@ -7,6 +7,7 @@ import { wellKnownRoutes } from "./routes/wellKnown.js";
 import { subscriptionRoutes } from "./routes/subscriptions.js";
 import { settingsRoutes } from "./routes/settings.js";
 import { startTelemetryIngestor } from "./telemetry/ingestor.js";
+import { startSentrySchedule } from "./scheduler/sentrySchedule.js";
 
 const app = Fastify({ logger: true });
 
@@ -26,3 +27,4 @@ app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((error) => {
 });
 
 startTelemetryIngestor().catch((error) => app.log.error(error));
+startSentrySchedule();

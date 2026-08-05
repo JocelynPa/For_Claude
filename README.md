@@ -77,6 +77,11 @@ compilation.
 - **Action automatique** configurable (klaxon, phares, verrouillage, ou
   aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
   même app fermée. Voir `deploy/README.md` §12
+- **Programmation horaire** : active/désactive Sentinel tout seul sur un
+  créneau récurrent (heure de début/fin, jours de la semaine) — exécutée
+  côté serveur (`backend/src/scheduler/sentrySchedule.ts`, un tick par
+  minute), donc ça fonctionne même téléphone éteint. Gère les créneaux qui
+  passent minuit (ex. 20h→7h)
 - **Paywall** Premium (plans mensuel/annuel, essai gratuit de 7 jours mis en
   avant), axé sur ce que Sentry Mode apporte par rapport à l'app Tesla
   officielle — UI seule pour l'instant, l'essai n'est pas réellement déclenché
