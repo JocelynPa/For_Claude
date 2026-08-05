@@ -19,9 +19,11 @@ struct SentinelActivationCard: View {
                     Text(vehicle.displayName)
                         .font(AppFont.headline())
                         .foregroundStyle(AppTheme.Colors.textPrimary)
-                    Text(vehicle.vin.suffix(6).uppercased())
+                    Text(vehicle.vin.uppercased())
                         .font(AppFont.caption())
                         .foregroundStyle(AppTheme.Colors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
