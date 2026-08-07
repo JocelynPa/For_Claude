@@ -3,6 +3,10 @@ import SwiftUI
 struct EventTimelineView: View {
     let events: [SentryTimelineEntry]
 
+    // Seeded with just today's key — doesn't depend on `events`, so this is
+    // a valid stored-property default. Everything else starts collapsed.
+    @State private var expandedDays: Set<Date> = [Calendar.current.startOfDay(for: .now)]
+
     private var groupedByDay: [(day: Date, events: [SentryTimelineEntry])] {
         let calendar = Calendar.current
         let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
@@ -15,31 +19,54 @@ struct EventTimelineView: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             ForEach(groupedByDay, id: \.day) { group in
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack {
-                        Text(Self.dayLabel(for: group.day))
-                        Rectangle()
-                            .fill(AppTheme.Colors.border)
-                            .frame(height: 1)
-                        Text(group.day.formatted(.dateTime.day().month(.abbreviated)))
-                    }
-                    .font(AppFont.overline())
-                    .foregroundStyle(AppTheme.Colors.textSecondary)
-                    .tracking(1)
-                    .textCase(.uppercase)
+                    dayHeader(for: group.day)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        ForEach(Self.timelineItems(for: group.events)) { item in
-                            switch item {
-                            case .activity(let entry):
-                                ActivityDetectedCard(entry: entry)
-                            case .stateGroup(let entries):
-                                StateChangeGroupCard(entries: entries)
+                    if expandedDays.contains(group.day) {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            ForEach(Self.timelineItems(for: group.events)) { item in
+                                switch item {
+                                case .activity(let entry):
+                                    ActivityDetectedCard(entry: entry)
+                                case .stateGroup(let entries):
+                                    StateChangeGroupCard(entries: entries)
+                                }
                             }
                         }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }
         }
+    }
+
+    private func dayHeader(for day: Date) -> some View {
+        let isExpanded = expandedDays.contains(day)
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if isExpanded {
+                    expandedDays.remove(day)
+                } else {
+                    expandedDays.insert(day)
+                }
+            }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Text(Self.dayLabel(for: day))
+                Rectangle()
+                    .fill(AppTheme.Colors.border)
+                    .frame(height: 1)
+                Text(day.formatted(.dateTime.day().month(.abbreviated)))
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+            }
+            .font(AppFont.overline())
+            .foregroundStyle(AppTheme.Colors.textSecondary)
+            .tracking(1)
+            .textCase(.uppercase)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// Consecutive plain state transitions (Sentry Mode activé/désactivé)
