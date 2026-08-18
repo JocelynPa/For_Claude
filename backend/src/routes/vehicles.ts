@@ -15,9 +15,18 @@ import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } fro
 // respond — the mapper falls back to a safe default (Sentry off) in that
 // case. Every failure is logged since callers only ever see null,
 // not why.
+// ⚠️ `location_data` doesn't come back on a plain `vehicle_data` call —
+// Tesla gates it behind explicitly listing it in `endpoints` (a privacy-
+// motivated carve-out added after the other categories). `vehicle_state`
+// is included here too rather than relying on it also being in whatever
+// Tesla defaults to when `endpoints` is set at all — not confirmed
+// end-to-end against a real vehicle, needs a device check like the other
+// Fleet API specifics in this file.
+const VEHICLE_DATA_ENDPOINTS = "vehicle_state;location_data";
+
 async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
   try {
-    return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
+    return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data?endpoints=${VEHICLE_DATA_ENDPOINTS}`, token);
   } catch (initialError) {
     console.error(`vehicle_data failed for ${id}, attempting wake_up`, initialError);
   }
@@ -33,7 +42,7 @@ async function fetchVehicleDataWithWake(id: string, token: string): Promise<Tesl
   for (let attempt = 1; attempt <= attempts; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     try {
-      return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data`, token);
+      return await fleetApiFetch<TeslaVehicleData>(`/vehicles/${id}/vehicle_data?endpoints=${VEHICLE_DATA_ENDPOINTS}`, token);
     } catch (retryError) {
       if (attempt === attempts) {
         console.error(`vehicle_data still failing for ${id} after wake_up + ${attempts} retries`, retryError);
