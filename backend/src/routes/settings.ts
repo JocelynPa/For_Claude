@@ -71,4 +71,14 @@ export async function settingsRoutes(app: FastifyInstance) {
     const user = await prisma.user.update({ where: { id: request.userId! }, data });
     return { sentryAutoAction: user.sentryAutoAction, sentrySchedule: scheduleResponse(user) };
   });
+
+  // Registered by the app once the user grants notification permission
+  // (see PushNotificationManager). Re-sent on every launch since APNs
+  // tokens can rotate; a plain upsert-by-write is simplest here.
+  const deviceTokenBody = z.object({ token: z.string().min(1) });
+  app.post("/settings/device-token", async (request) => {
+    const { token } = deviceTokenBody.parse(request.body);
+    await prisma.user.update({ where: { id: request.userId! }, data: { pushToken: token } });
+    return {};
+  });
 }

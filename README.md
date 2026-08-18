@@ -77,6 +77,12 @@ compilation.
 - **Action automatique** configurable (klaxon, phares, verrouillage, ou
   aucune) déclenchée côté serveur à chaque activité détectée — fonctionne
   même app fermée. Voir `deploy/README.md` §12
+- **Notifications push** (APNs) à chaque activité détectée — token
+  enregistré au premier lancement authentifié si "Alertes Sentinel" est
+  activé dans Réglages, envoi déclenché par le même signal Fleet Telemetry
+  que l'action automatique. Optionnel : configuration APNs absente = pas de
+  push, le reste de l'app fonctionne normalement. Voir `deploy/README.md`
+  §13
 - **Programmation horaire** : active/désactive Sentinel tout seul sur un
   créneau récurrent (heure de début/fin, jours de la semaine) — exécutée
   côté serveur (`backend/src/scheduler/sentrySchedule.ts`, un tick par
@@ -106,10 +112,6 @@ compilation.
 - Le son "pet" (`remote_boombox`) n'est pas proposé comme action —
   `tesla-http-proxy` (le proxy de signature dont dépendent toutes les
   commandes signées) le marque explicitement non implémenté
-- Notifications push (APNs) retirées temporairement (config Apple
-  Developer non disponible pour l'instant) — le code existait
-  (`backend/src/services/push.ts`, `PushNotificationManager`), voir
-  l'historique git pour le réintroduire
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Tests

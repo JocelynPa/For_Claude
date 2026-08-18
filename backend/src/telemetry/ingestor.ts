@@ -3,6 +3,7 @@ import { env } from "../config/env.js";
 import { prisma } from "../db/prisma.js";
 import { signedCommandFetch } from "../services/teslaClient.js";
 import { getValidAccessToken } from "../services/tokenStore.js";
+import { sendPushNotification } from "../services/push.js";
 
 // Shapes match the protobuf-JSON encoding fleet-telemetry emits on Redis
 // when `transmit_decoded_records: true` (protojson.Marshal on
@@ -71,9 +72,13 @@ const AUTO_ACTION_COMMANDS: Record<string, string> = {
 // mapping in the schema (TeslaCredential is keyed by userId only), so "the"
 // account is just whichever User row exists. Fine here; would need real
 // mapping if this ever grew multi-tenant.
-async function actOnActivity(vin: string): Promise<void> {
+async function notifyAndActOnActivity(vin: string, description: string): Promise<void> {
   const user = await prisma.user.findFirst();
   if (!user) return;
+
+  if (user.pushToken) {
+    await sendPushNotification(user.pushToken, "Sentinel", description);
+  }
 
   const command = AUTO_ACTION_COMMANDS[user.sentryAutoAction];
   if (!command) return;
@@ -112,7 +117,7 @@ async function handleVehicleDataMessage(raw: string): Promise<void> {
         awarenessLevel: activity.level,
       },
     });
-    await actOnActivity(payload.vin);
+    await notifyAndActOnActivity(payload.vin, activity.description);
     return;
   }
 
