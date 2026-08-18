@@ -45,6 +45,10 @@ targets:
         # only once distributed via TestFlight/App Store, alongside
         # APNS_PRODUCTION=true. See deploy/README.md §12.
         aps-environment: development
+        # Powers the current-weather chip on the Sentinel card (see
+        # SentinelActivationCard/WeatherChip) — also needs the WeatherKit
+        # capability enabled for this App ID in the Apple Developer portal.
+        com.apple.developer.weatherkit: true
 schemes:
   TeslaCompanion:
     build:

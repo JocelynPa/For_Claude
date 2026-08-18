@@ -8,6 +8,11 @@ export interface TeslaVehicleListItem {
 
 export interface TeslaVehicleData {
   vehicle_state: { sentry_mode: boolean };
+  // Only present when `vehicle_data` is requested with `location_data` in
+  // its `endpoints` query param — see fetchVehicleDataWithWake in
+  // routes/vehicles.ts. Relayed live to the app for a current-conditions
+  // WeatherKit lookup only; never written to the database anywhere.
+  drive_state?: { latitude: number; longitude: number } | null;
 }
 
 /**
@@ -32,5 +37,8 @@ export function mapTeslaVehicle(list: TeslaVehicleListItem, data: TeslaVehicleDa
     vin: list.vin,
     state: list.state === "online" ? "online" : list.state === "asleep" ? "asleep" : "offline",
     isSentryModeActive: data?.vehicle_state.sentry_mode ?? false,
+    location: data?.drive_state
+      ? { latitude: data.drive_state.latitude, longitude: data.drive_state.longitude }
+      : null,
   };
 }
