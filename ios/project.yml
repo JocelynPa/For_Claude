@@ -38,6 +38,13 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: false
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    entitlements:
+      path: TeslaCompanion/TeslaCompanion.entitlements
+      properties:
+        # "development" for direct Xcode installs — switch to "production"
+        # only once distributed via TestFlight/App Store, alongside
+        # APNS_PRODUCTION=true. See deploy/README.md §12.
+        aps-environment: development
 schemes:
   TeslaCompanion:
     build:

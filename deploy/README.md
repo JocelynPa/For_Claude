@@ -306,6 +306,48 @@ dont dépend toute commande signée dans ce projet) le marque explicitement
 `command not implemented` dans son code source — impossible à fiabiliser
 avec l'infra actuelle.
 
+## 13. Notifications push (APNs)
+
+Optionnel — envoie une notification à chaque entrée "activité détectée"
+(aware/panic) sur le flux Fleet Telemetry. Nécessite Fleet Telemetry déjà
+fonctionnel (§11) et un compte développeur Apple.
+
+### 13.1 Générer la clé APNs
+
+Dans [developer.apple.com](https://developer.apple.com) → **Certificates,
+Identifiers & Profiles → Keys** → créez une nouvelle clé avec **Apple Push
+Notifications service (APNs)** cochée. Téléchargez le fichier `.p8`
+(non re-téléchargeable ensuite — conservez-le), notez le **Key ID** affiché
+et votre **Team ID** (en haut à droite de la page, ou dans Membership).
+
+### 13.2 Configuration
+
+Dans `deploy/.env` :
+- `APNS_KEY_ID` : le Key ID de la clé générée
+- `APNS_TEAM_ID` : votre Team ID Apple Developer
+- `APNS_AUTH_KEY` : le contenu du fichier `.p8` (le bloc `-----BEGIN
+  PRIVATE KEY----- ... -----END PRIVATE KEY-----` complet, sur une seule
+  ligne avec `\n` littéraux — la variable d'environnement ne peut pas
+  contenir de vrais retours à la ligne)
+- `APNS_BUNDLE_ID` : `com.teslacompanion.app` (déjà la valeur par défaut,
+  doit correspondre à `PRODUCT_BUNDLE_IDENTIFIER` dans `ios/project.yml`)
+- `APNS_PRODUCTION` : `false` tant que l'app est installée via Xcode en
+  direct (device de développement) — passez à `true` seulement après
+  distribution via TestFlight ou l'App Store, l'environnement APNs
+  (sandbox vs production) doit correspondre à comment l'app a été
+  installée, sinon les pushs échouent silencieusement.
+
+```bash
+docker compose up -d backend
+```
+
+### 13.3 Activer côté app
+
+Dans l'app iOS, **Réglages → Alertes Sentinel** (activé par défaut) — au
+premier lancement authentifié, l'app demande la permission de notification
+puis enregistre le token auprès du backend (`POST /settings/device-token`).
+Rien à faire côté NAS/serveur au-delà de la configuration `.env` ci-dessus.
+
 ## Mises à jour
 
 ```bash

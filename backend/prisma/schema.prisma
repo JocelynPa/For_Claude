@@ -28,6 +28,10 @@ model User {
   sentryScheduleEnd      String           @default("07:00")
   sentryScheduleDays     String           @default("1,2,3,4,5,6,7")
   sentryScheduleTimezone String           @default("Europe/Paris")
+  // APNs device token, re-registered on every launch (tokens can rotate)
+  // once the user grants notification permission — see
+  // PushNotificationManager.swift / src/services/push.ts.
+  pushToken              String?
   createdAt              DateTime         @default(now())
   teslaCredential        TeslaCredential?
 }

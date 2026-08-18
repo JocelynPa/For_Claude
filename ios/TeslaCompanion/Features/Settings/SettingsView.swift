@@ -30,6 +30,9 @@ struct SettingsView: View {
 
                 Section("Notifications") {
                     Toggle("Alertes Sentinel", isOn: $sentryNotifications)
+                        .onChange(of: sentryNotifications) { _, isOn in
+                            if isOn { environment.pushManager.requestAuthorizationIfEnabled() }
+                        }
                 }
 
                 Section {
