@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var auth: AuthManager
+    @EnvironmentObject private var environment: AppEnvironment
     @State private var showLaunchAnimation = true
     @AppStorage("has_seen_onboarding") private var hasSeenOnboarding = false
 
@@ -27,6 +28,11 @@ struct RootView: View {
             try? await Task.sleep(nanoseconds: 1_400_000_000)
             withAnimation(.easeInOut(duration: 0.4)) {
                 showLaunchAnimation = false
+            }
+        }
+        .task(id: auth.isAuthenticated) {
+            if auth.isAuthenticated {
+                environment.pushManager.requestAuthorizationIfEnabled()
             }
         }
     }

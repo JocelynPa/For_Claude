@@ -10,6 +10,7 @@ final class AppEnvironment: ObservableObject {
     let vehicleService: VehicleServicing
     let sentryService: SentryServicing
     let settingsService: SettingsServicing
+    let pushManager: PushNotificationManager
 
     init(
         auth: AuthManager? = nil,
@@ -35,5 +36,6 @@ final class AppEnvironment: ObservableObject {
         // honest than showing demo data that looks real.
         self.sentryService = sentryService ?? TeslaSentryService(auth: resolvedAuth)
         self.settingsService = settingsService ?? TeslaSettingsService(auth: resolvedAuth)
+        self.pushManager = PushNotificationManager(auth: resolvedAuth)
     }
 }
