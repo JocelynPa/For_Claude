@@ -1,4 +1,6 @@
+import CoreLocation
 import SwiftUI
+import WeatherKit
 
 /// Replaces the old vehicle-icon header + separate status banner + plain
 /// toggle with a single hero card: a pulsing orb (echoes the app icon's
@@ -15,15 +17,19 @@ struct SentinelActivationCard: View {
     var body: some View {
         Card(padding: AppSpacing.lg) {
             VStack(spacing: AppSpacing.lg) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(vehicle.displayName)
-                        .font(AppFont.headline())
-                        .foregroundStyle(AppTheme.Colors.textPrimary)
-                    Text(vehicle.vin.uppercased())
-                        .font(AppFont.caption())
-                        .foregroundStyle(AppTheme.Colors.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(vehicle.displayName)
+                            .font(AppFont.headline())
+                            .foregroundStyle(AppTheme.Colors.textPrimary)
+                        Text(vehicle.vin.uppercased())
+                            .font(AppFont.caption())
+                            .foregroundStyle(AppTheme.Colors.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    Spacer(minLength: AppSpacing.sm)
+                    WeatherChip(location: vehicle.location)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -91,6 +97,43 @@ struct SentinelActivationCard: View {
             )
         }
         .disabled(isToggling)
+    }
+}
+
+/// Fetches and shows the vehicle's current on-site weather via WeatherKit.
+/// `location` comes straight from the live Fleet API response (see
+/// Vehicle.location) — never persisted, and re-fetched whenever it changes.
+private struct WeatherChip: View {
+    let location: Coordinate?
+    @State private var current: CurrentWeather?
+
+    var body: some View {
+        Group {
+            if let current {
+                HStack(spacing: 4) {
+                    Image(systemName: current.symbolName)
+                        .symbolRenderingMode(.multicolor)
+                    Text(current.temperature.formatted(.measurement(width: .narrow, numberFormatStyle: .number.precision(.fractionLength(0)))))
+                }
+                .font(AppFont.caption())
+                .foregroundStyle(AppTheme.Colors.textSecondary)
+            }
+        }
+        .task(id: location) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        guard let location else { current = nil; return }
+        do {
+            current = try await WeatherService.shared.weather(
+                for: CLLocation(latitude: location.latitude, longitude: location.longitude),
+                including: .current
+            )
+        } catch {
+            current = nil
+        }
     }
 }
 

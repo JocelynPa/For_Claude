@@ -10,7 +10,9 @@ final class MockVehicleService: VehicleServicing {
         displayName: "Mon Model 3",
         vin: "5YJ3E1EA0PF000000",
         state: .online,
-        isSentryModeActive: true
+        isSentryModeActive: true,
+        // Paris, for a sample weather chip in Previews/Simulator.
+        location: Coordinate(latitude: 48.8566, longitude: 2.3522)
     )
 
     func fetchVehicles() async throws -> [Vehicle] {
