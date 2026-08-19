@@ -21,7 +21,11 @@ export async function authRoutes(app: FastifyInstance) {
       client_id: env.TESLA_CLIENT_ID,
       redirect_uri: env.TESLA_REDIRECT_URI,
       response_type: "code",
-      scope: "openid email offline_access vehicle_device_data vehicle_cmds vehicle_charging_cmds",
+      // vehicle_location is required separately from vehicle_device_data —
+      // without it, Tesla omits drive_state.latitude/longitude even when
+      // `endpoints=location_data` is requested (see fetchVehicleDataWithWake
+      // in routes/vehicles.ts), which is why the weather chip stayed empty.
+      scope: "openid email offline_access vehicle_device_data vehicle_location vehicle_cmds vehicle_charging_cmds",
       state,
     });
     return reply.redirect(`${TESLA_AUTHORIZE_URL}?${params.toString()}`);
