@@ -19,10 +19,14 @@ import { mapTeslaVehicle, type TeslaVehicleData, type TeslaVehicleListItem } fro
 // Tesla gates it behind explicitly listing it in `endpoints` (a privacy-
 // motivated carve-out added after the other categories). `vehicle_state`
 // is included here too rather than relying on it also being in whatever
-// Tesla defaults to when `endpoints` is set at all — not confirmed
-// end-to-end against a real vehicle, needs a device check like the other
-// Fleet API specifics in this file.
-const VEHICLE_DATA_ENDPOINTS = "vehicle_state;location_data";
+// Tesla defaults to when `endpoints` is set at all. `drive_state` is
+// listed explicitly alongside `location_data` too: when `endpoints` is
+// set, Tesla only returns the categories named in it, and latitude/
+// longitude live inside the `drive_state` object — `location_data` alone
+// may just unlock the field values without putting the object itself in
+// scope. Still not confirmed end-to-end against a real vehicle, needs a
+// device check like the other Fleet API specifics in this file.
+const VEHICLE_DATA_ENDPOINTS = "vehicle_state;drive_state;location_data";
 
 async function fetchVehicleDataWithWake(id: string, token: string): Promise<TeslaVehicleData | null> {
   try {
@@ -61,6 +65,14 @@ export async function vehicleRoutes(app: FastifyInstance) {
     return Promise.all(
       list.map(async (item) => {
         const data = await fetchVehicleDataWithWake(String(item.id), token);
+        // Temporary diagnostic for the weather chip rollout — remove once
+        // confirmed working against a real vehicle. Tells us whether Tesla
+        // is omitting drive_state entirely vs. sending it without lat/long.
+        if (data && !data.drive_state) {
+          console.warn(`vehicle_data for ${item.id} has no drive_state despite endpoints=${VEHICLE_DATA_ENDPOINTS}`);
+        } else if (data?.drive_state && (data.drive_state.latitude == null || data.drive_state.longitude == null)) {
+          console.warn(`vehicle_data for ${item.id} has drive_state but no latitude/longitude`, data.drive_state);
+        }
         return mapTeslaVehicle(item, data);
       })
     );
