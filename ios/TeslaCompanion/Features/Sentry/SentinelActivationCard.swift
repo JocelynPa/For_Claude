@@ -125,13 +125,23 @@ private struct WeatherChip: View {
     }
 
     private func load() async {
-        guard let location else { current = nil; return }
+        guard let location else {
+            print("WeatherChip: no vehicle location, skipping WeatherKit lookup")
+            current = nil
+            return
+        }
         do {
             current = try await WeatherService.shared.weather(
                 for: CLLocation(latitude: location.latitude, longitude: location.longitude),
                 including: .current
             )
         } catch {
+            // Swallowed on purpose (no location = no chip, not an error
+            // banner) but logged — WeatherKit failures (missing
+            // entitlement, capability not enabled for the App ID, no
+            // WeatherKit usage in the provisioning profile) are otherwise
+            // invisible since there's no backend to relay them through.
+            print("WeatherChip: WeatherKit lookup failed —", error)
             current = nil
         }
     }
