@@ -9,6 +9,12 @@ struct SentryHomeView: View {
     @State private var isTogglingSentry = false
     @State private var loadError: String?
     @State private var loadTask: Task<Void, Never>?
+    // Tesla's wake_up + poll cycle (fetchVehicleDataWithWake on the backend)
+    // can take up to ~30s when the car is asleep. A bare spinner for that
+    // long reads as broken, so this flips on after a few seconds to explain
+    // the wait instead of leaving it unexplained.
+    @State private var isWakingVehicle = false
+    @State private var wakeHintTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -21,6 +27,17 @@ struct SentryHomeView: View {
                             isToggling: isTogglingSentry,
                             onToggle: { Task { await setSentryMode(!vehicle.isSentryModeActive) } }
                         )
+                    } else if isLoading {
+                        VStack(spacing: AppSpacing.sm) {
+                            ProgressView()
+                            if isWakingVehicle {
+                                Text("Réveil du véhicule en cours…")
+                                    .font(AppFont.caption())
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.lg)
                     }
 
                     if let loadError {
@@ -83,6 +100,13 @@ struct SentryHomeView: View {
     private func load() async {
         isLoading = true
         loadError = nil
+        isWakingVehicle = false
+        wakeHintTask?.cancel()
+        wakeHintTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            isWakingVehicle = true
+        }
         // Only overwrite `vehicle` on a successful fetch — a transient
         // failure on pull-to-refresh (e.g. car asleep, brief Fleet API
         // hiccup) shouldn't blank out the header/toggle that was already
@@ -96,6 +120,8 @@ struct SentryHomeView: View {
         } catch {
             if !Self.isCancellation(error) { loadError = error.localizedDescription }
         }
+        wakeHintTask?.cancel()
+        isWakingVehicle = false
         guard let vehicleId = vehicle?.id, !Task.isCancelled else {
             isLoading = false
             return
