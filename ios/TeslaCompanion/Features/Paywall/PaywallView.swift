@@ -59,6 +59,17 @@ struct PaywallView: View {
                     Button("Restaurer mes achats") {}
                         .font(AppFont.caption())
                         .foregroundStyle(AppTheme.Colors.textSecondary)
+
+                    // Required by App Store guideline 3.1.2 for
+                    // auto-renewable subscriptions: functional links to the
+                    // terms of use and privacy policy, visible on the
+                    // purchase screen itself, not just buried in Settings.
+                    HStack(spacing: AppSpacing.md) {
+                        Link("Conditions d'utilisation", destination: AppConfig.termsOfUseURL)
+                        Link("Confidentialité", destination: AppConfig.privacyPolicyURL)
+                    }
+                    .font(AppFont.caption())
+                    .foregroundStyle(AppTheme.Colors.textSecondary)
                 }
                 .padding(AppSpacing.lg)
             }

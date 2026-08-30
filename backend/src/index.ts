@@ -6,6 +6,7 @@ import { vehicleRoutes } from "./routes/vehicles.js";
 import { wellKnownRoutes } from "./routes/wellKnown.js";
 import { subscriptionRoutes } from "./routes/subscriptions.js";
 import { settingsRoutes } from "./routes/settings.js";
+import { legalRoutes } from "./routes/legal.js";
 import { startTelemetryIngestor } from "./telemetry/ingestor.js";
 import { startSentrySchedule } from "./scheduler/sentrySchedule.js";
 
@@ -20,6 +21,7 @@ await app.register(vehicleRoutes);
 await app.register(wellKnownRoutes);
 await app.register(subscriptionRoutes);
 await app.register(settingsRoutes);
+await app.register(legalRoutes);
 
 app.listen({ port: env.PORT, host: "0.0.0.0" }).catch((error) => {
   app.log.error(error);

@@ -7,6 +7,13 @@ enum AppConfig {
 
     static let teslaOAuthRedirectScheme = "teslacompanion"
 
+    /// Required on the paywall by App Store guideline 3.1.2 for
+    /// auto-renewable subscriptions — served by the backend (see
+    /// backend/src/routes/legal.ts), not bundled in the app, so they stay
+    /// editable without a store release.
+    static let termsOfUseURL = URL(string: "\(apiBaseURL)/legal/conditions-generales-utilisation")!
+    static let privacyPolicyURL = URL(string: "\(apiBaseURL)/legal/politique-de-confidentialite")!
+
     /// ⚠️ Not officially documented by Tesla — reverse-engineered/best-effort,
     /// like the virtual key deep link below. Opens the Tesla app in general
     /// (there's no known way to deep link into a specific Sentry clip or
