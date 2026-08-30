@@ -31,14 +31,12 @@ extension SubscriptionPlan {
 
     /// Everything the app does is already free to use — this list is what
     /// Premium is meant to add once it's actually wired up (RevenueCat SDK
-    /// not integrated yet, see README). "Notifications push" in particular
-    /// isn't implemented right now (Apple Developer config unavailable —
-    /// see git history for `PushNotificationManager`), listed here as the
-    /// planned premium perk once it's rebuilt.
+    /// not integrated yet, see README). Push notifications aren't listed
+    /// here — they're implemented and free for everyone (see
+    /// PushNotificationManager), not a Premium perk.
     static let allFeatures = [
         "Timeline Sentry en temps réel (Fleet Telemetry)",
         "Action automatique à la détection (klaxon, phares, verrouillage)",
-        "Notifications push instantanées",
         "Historique complet des événements"
     ]
 }
