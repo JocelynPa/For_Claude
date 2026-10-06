@@ -80,6 +80,10 @@ async function notifyAndActOnActivity(vin: string, description: string): Promise
     await sendPushNotification(user.pushToken, "Sentinel", description);
   }
 
+  // Re-checked here (not just at the time the setting was saved, see
+  // routes/settings.ts) so a lapsed subscription stops firing the action
+  // immediately rather than whenever the user next opens Settings.
+  if (user.subscriptionStatus !== "premium") return;
   const command = AUTO_ACTION_COMMANDS[user.sentryAutoAction];
   if (!command) return;
   try {

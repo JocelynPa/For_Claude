@@ -39,7 +39,11 @@ export async function settingsRoutes(app: FastifyInstance) {
 
   app.get("/settings", async (request) => {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: request.userId! } });
-    return { sentryAutoAction: user.sentryAutoAction, sentrySchedule: scheduleResponse(user) };
+    return {
+      sentryAutoAction: user.sentryAutoAction,
+      sentrySchedule: scheduleResponse(user),
+      isPremium: user.subscriptionStatus === "premium",
+    };
   });
 
   const updateSettingsBody = z.object({
@@ -57,8 +61,19 @@ export async function settingsRoutes(app: FastifyInstance) {
       })
       .optional(),
   });
-  app.patch("/settings", async (request) => {
+  app.patch("/settings", async (request, reply) => {
     const body = updateSettingsBody.parse(request.body);
+
+    // Auto-action (honk/flash/lock on detection) is Premium-only — "none"
+    // stays free for everyone. Checked here (not just hinted at in the
+    // app's UI) since the client-side check is trivially bypassable.
+    if (body.sentryAutoAction !== undefined && body.sentryAutoAction !== "none") {
+      const user = await prisma.user.findUniqueOrThrow({ where: { id: request.userId! } });
+      if (user.subscriptionStatus !== "premium") {
+        return reply.code(403).send({ error: "premium_required" });
+      }
+    }
+
     const data: Prisma.UserUpdateInput = {};
     if (body.sentryAutoAction !== undefined) data.sentryAutoAction = body.sentryAutoAction;
     if (body.sentrySchedule) {
@@ -69,7 +84,11 @@ export async function settingsRoutes(app: FastifyInstance) {
       data.sentryScheduleTimezone = body.sentrySchedule.timezone;
     }
     const user = await prisma.user.update({ where: { id: request.userId! }, data });
-    return { sentryAutoAction: user.sentryAutoAction, sentrySchedule: scheduleResponse(user) };
+    return {
+      sentryAutoAction: user.sentryAutoAction,
+      sentrySchedule: scheduleResponse(user),
+      isPremium: user.subscriptionStatus === "premium",
+    };
   });
 
   // Registered by the app once the user grants notification permission

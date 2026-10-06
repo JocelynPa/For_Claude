@@ -11,9 +11,10 @@ model User {
   id                     String           @id @default(uuid())
   teslaSubject           String?          @unique
   email                  String           @unique
-  // Written by the RevenueCat webhook (src/routes/subscriptions.ts) — the
-  // paywall itself is UI-only (no SDK wired up, no feature actually
-  // gated on this yet), see README.
+  // Written by the RevenueCat webhook (src/routes/subscriptions.ts).
+  // Gates the Premium-only features: sentry-timeline reads (routes/
+  // vehicles.ts), setting a non-"none" sentryAutoAction (routes/
+  // settings.ts), and actually firing that action (telemetry/ingestor.ts).
   subscriptionStatus     String           @default("free")
   // Fired automatically by the Fleet Telemetry ingestor when it records an
   // "activityDetected" entry (aware/panic) — none | honk | flash | lock.

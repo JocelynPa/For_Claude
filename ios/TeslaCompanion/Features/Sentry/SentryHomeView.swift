@@ -15,6 +15,8 @@ struct SentryHomeView: View {
     // the wait instead of leaving it unexplained.
     @State private var isWakingVehicle = false
     @State private var wakeHintTask: Task<Void, Never>?
+    @State private var eventsLocked = false
+    @State private var showPaywall = false
 
     var body: some View {
         NavigationStack {
@@ -61,6 +63,18 @@ struct SentryHomeView: View {
 
                         if isLoading && events.isEmpty {
                             ProgressView().frame(maxWidth: .infinity).padding(.vertical, AppSpacing.lg)
+                        } else if eventsLocked {
+                            VStack(spacing: AppSpacing.sm) {
+                                Text("La timeline des événements est réservée aux abonnés Premium.")
+                                    .font(AppFont.body())
+                                    .multilineTextAlignment(.center)
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                                Button("Passer à Premium") { showPaywall = true }
+                                    .font(AppFont.caption())
+                                    .foregroundStyle(AppTheme.Colors.accent)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppSpacing.lg)
                         } else if events.isEmpty {
                             Text("Aucun événement Sentry pour le moment.")
                                 .font(AppFont.body())
@@ -81,6 +95,9 @@ struct SentryHomeView: View {
             .navigationTitle("Sentinel")
             .task { await runLoad() }
             .refreshable { await runLoad() }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
 
@@ -100,6 +117,7 @@ struct SentryHomeView: View {
     private func load() async {
         isLoading = true
         loadError = nil
+        eventsLocked = false
         isWakingVehicle = false
         wakeHintTask?.cancel()
         wakeHintTask = Task {
@@ -130,6 +148,9 @@ struct SentryHomeView: View {
         // an already-populated events list.
         do {
             events = try await environment.sentryService.fetchEvents(vehicleId: vehicleId)
+        } catch APIError.premiumRequired {
+            eventsLocked = true
+            events = []
         } catch {
             if !Self.isCancellation(error) { loadError = error.localizedDescription }
         }

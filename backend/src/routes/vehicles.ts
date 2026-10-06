@@ -100,7 +100,16 @@ export async function vehicleRoutes(app: FastifyInstance) {
   // (src/telemetry/ingestor.js), not polled here — this just reads what's
   // already in Postgres. Empty until a vehicle is subscribed (see below)
   // and Fleet Telemetry is deployed (deploy/README.md).
-  app.get("/vehicles/:id/sentry-timeline", async (request) => {
+  //
+  // Premium-only (the timeline/history feature sold on the paywall) —
+  // entries are still recorded for everyone regardless (see ingestor.ts),
+  // only reading them back is gated.
+  app.get("/vehicles/:id/sentry-timeline", async (request, reply) => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: request.userId! } });
+    if (user.subscriptionStatus !== "premium") {
+      return reply.code(403).send({ error: "premium_required" });
+    }
+
     const { id } = request.params as { id: string };
     const entries = await prisma.sentryTimelineEntry.findMany({
       where: { vin: id, kind: { notIn: ["vehicleOnline", "vehicleOffline"] } },

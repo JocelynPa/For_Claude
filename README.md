@@ -88,19 +88,23 @@ compilation.
   côté serveur (`backend/src/scheduler/sentrySchedule.ts`, un tick par
   minute), donc ça fonctionne même téléphone éteint. Gère les créneaux qui
   passent minuit (ex. 20h→7h)
-- **Paywall** Premium (plans mensuel/annuel, essai gratuit de 7 jours mis en
-  avant), axé sur ce que Sentry Mode apporte par rapport à l'app Tesla
-  officielle — UI seule pour l'instant, l'essai n'est pas réellement déclenché
-  ni suivi côté backend (webhook RevenueCat prêt à recevoir les événements,
-  SDK d'achat non branché, voir plus bas)
+- **Paywall** Premium (plans mensuel/annuel, essai gratuit de 14 jours mis en
+  avant), branché sur le SDK RevenueCat (achat/restauration réels, voir
+  `PurchasesManager.swift`) — prix et durée d'essai viennent directement du
+  produit configuré dans App Store Connect, plus de valeurs codées en dur.
+  Les fonctionnalités Premium (timeline, action automatique, historique)
+  sont réellement verrouillées côté backend pour les non-abonnés (voir
+  `routes/settings.ts` et `routes/vehicles.ts`)
 - **Réglages** : abonnement, notifications, action Sentry automatique,
   appairage de la clé virtuelle, déconnexion
 
 ### Ce qui reste à faire pour une v1 réelle
 
-- Intégrer le SDK RevenueCat pour les achats in-app (le paywall est UI-only ;
-  `subscriptionStatus` sur `User` est déjà mis à jour par le webhook
-  RevenueCat, mais rien ne le lit encore pour restreindre une fonctionnalité)
+- Configurer le projet RevenueCat réel : clé API (`REVENUECAT_API_KEY` dans
+  `ios/project.yml`), produits `premium_monthly`/`premium_yearly`, et
+  l'entitlement nommé exactement `premium` (voir
+  `PurchasesManager.entitlementID`) — le code suppose que tout ça existe
+  déjà côté dashboard
 - La timeline Sentry a sa propre voie réelle (Fleet Telemetry, voir
   `deploy/README.md` §11) mais reste non déployée par défaut ; le champ
   `firedActions` de chaque entrée (ce que **Tesla lui-même** a déclenché,
@@ -115,8 +119,6 @@ compilation.
 - Vérification du `id_token` Tesla via JWKS côté backend (actuellement décodé
   sans vérification, voir `backend/src/routes/auth.ts`)
 - Tests
-- Avant toute diffusion au-delà d'un usage personnel : politique de
-  confidentialité/RGPD (l'app traite des données de compte et de véhicule)
 
 ## Démarrer le backend
 

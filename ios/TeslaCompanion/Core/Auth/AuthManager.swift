@@ -22,6 +22,28 @@ final class AuthManager: NSObject, ObservableObject {
         KeychainStore.read(tokenKey)
     }
 
+    /// The backend's internal `User.id` (the `userId` claim set by
+    /// `routes/auth.ts` when signing this token) — used as RevenueCat's
+    /// `appUserID` so the RevenueCat webhook's `app_user_id` lines up with
+    /// the row the backend actually updates (see
+    /// `routes/subscriptions.ts`). Decoded locally rather than fetched from
+    /// the backend: it's not a secret (same trust level as the token
+    /// itself), and this avoids an extra round-trip right after login.
+    var userId: String? {
+        guard let token = accessToken else { return nil }
+        let segments = token.split(separator: ".")
+        guard segments.count >= 2 else { return nil }
+        var base64 = String(segments[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64.append("=") }
+        guard let data = Data(base64Encoded: base64),
+              let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        return payload["userId"] as? String
+    }
+
     func signInWithTesla() async throws {
         guard let url = URL(string: "\(AppConfig.apiBaseURL)/auth/tesla/start") else {
             throw APIError.invalidURL

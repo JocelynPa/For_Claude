@@ -33,6 +33,11 @@ struct RootView: View {
         .task(id: auth.isAuthenticated) {
             if auth.isAuthenticated {
                 environment.pushManager.requestAuthorizationIfEnabled()
+                if let userId = auth.userId {
+                    await environment.purchasesManager.logIn(userId: userId)
+                }
+            } else {
+                await environment.purchasesManager.logOut()
             }
         }
     }
