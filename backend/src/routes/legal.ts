@@ -244,8 +244,8 @@ const termsOfUseHtml = page(
   <section>
     <h2>4. Abonnement Premium</h2>
     <ul>
-      <li>Tarifs : 4,99&nbsp;€ par mois, ou 39,99&nbsp;€ par an.</li>
-      <li>Un essai gratuit de 7 jours est proposé lors de la première souscription. Toute portion non utilisée de l'essai gratuit est perdue dès l'achat d'un abonnement Premium.</li>
+      <li>Tarifs : 6,99&nbsp;€ par mois, ou 39,99&nbsp;€ par an.</li>
+      <li>Un essai gratuit de 14 jours est proposé lors de la première souscription. Toute portion non utilisée de l'essai gratuit est perdue dès l'achat d'un abonnement Premium.</li>
       <li>Le paiement est prélevé sur votre compte Apple (iTunes/App Store) à la confirmation de l'achat.</li>
       <li>L'abonnement se renouvelle automatiquement pour une durée identique, sauf résiliation au moins 24 heures avant la fin de la période en cours.</li>
       <li>Vous pouvez gérer ou résilier votre abonnement à tout moment depuis les réglages de votre compte Apple ID (Réglages → votre nom → Abonnements).</li>

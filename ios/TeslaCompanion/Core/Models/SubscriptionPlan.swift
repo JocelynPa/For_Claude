@@ -9,12 +9,12 @@ struct SubscriptionPlan: Identifiable, Hashable {
 }
 
 extension SubscriptionPlan {
-    static let trialDays = 7
+    static let trialDays = 14
 
     static let monthly = SubscriptionPlan(
         id: "premium_monthly",
         title: "Mensuel",
-        price: "4,99 €",
+        price: "6,99 €",
         period: "/ mois",
         highlight: nil
     )
@@ -24,9 +24,9 @@ extension SubscriptionPlan {
         title: "Annuel",
         price: "39,99 €",
         period: "/ an",
-        // 39,99 € / an ≈ 3,33 €/mois vs. 4,99 €/mois — un peu plus de 4 mois
-        // offerts sur les 12, pas 2.
-        highlight: "4 mois offerts"
+        // 39,99 € / an ≈ 3,33 €/mois vs. 6,99 €/mois — environ 6 mois
+        // offerts sur les 12.
+        highlight: "6 mois offerts"
     )
 
     /// Everything the app does is already free to use — this list is what
