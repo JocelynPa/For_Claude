@@ -5,6 +5,10 @@ enum AppConfig {
         Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String ?? "https://api.teslacompanion.app"
     }()
 
+    static let revenueCatAPIKey: String = {
+        Bundle.main.object(forInfoDictionaryKey: "REVENUECAT_API_KEY") as? String ?? ""
+    }()
+
     static let teslaOAuthRedirectScheme = "teslacompanion"
 
     /// Required on the paywall by App Store guideline 3.1.2 for

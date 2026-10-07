@@ -5,6 +5,7 @@ enum APIError: LocalizedError {
     case server(Int)
     case decoding(String)
     case unauthorized
+    case premiumRequired
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,8 @@ enum APIError: LocalizedError {
             "Réponse du serveur illisible (\(details))."
         case .unauthorized:
             "Session expirée, reconnectez-vous."
+        case .premiumRequired:
+            "Fonctionnalité réservée aux abonnés Premium."
         }
     }
 }
@@ -68,6 +71,7 @@ final class APIClient {
         guard let http = response as? HTTPURLResponse else { throw APIError.server(-1) }
         guard (200..<300).contains(http.statusCode) else {
             if http.statusCode == 401 { throw APIError.unauthorized }
+            if http.statusCode == 403 { throw APIError.premiumRequired }
             throw APIError.server(http.statusCode)
         }
 

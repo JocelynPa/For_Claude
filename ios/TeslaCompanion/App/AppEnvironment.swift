@@ -11,6 +11,7 @@ final class AppEnvironment: ObservableObject {
     let sentryService: SentryServicing
     let settingsService: SettingsServicing
     let pushManager: PushNotificationManager
+    let purchasesManager: PurchasesManager
 
     init(
         auth: AuthManager? = nil,
@@ -37,5 +38,7 @@ final class AppEnvironment: ObservableObject {
         self.sentryService = sentryService ?? TeslaSentryService(auth: resolvedAuth)
         self.settingsService = settingsService ?? TeslaSettingsService(auth: resolvedAuth)
         self.pushManager = PushNotificationManager(auth: resolvedAuth)
+        self.purchasesManager = PurchasesManager()
+        self.purchasesManager.configure()
     }
 }

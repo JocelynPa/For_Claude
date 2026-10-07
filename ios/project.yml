@@ -7,12 +7,23 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+packages:
+  # ⚠️ Version constraint not verified against RevenueCat's actual latest
+  # release (no network access to the Swift Package Index while writing
+  # this) — `xcodegen generate` will resolve to whatever satisfies
+  # "5.0.0 and later, same major", so check Xcode doesn't pull in an
+  # unexpectedly new major version on first resolve.
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios.git
+    from: 5.0.0
 targets:
   TeslaCompanion:
     type: application
     platform: iOS
     sources:
       - path: TeslaCompanion
+    dependencies:
+      - package: RevenueCat
     info:
       path: TeslaCompanion/Resources/Info.plist
       properties:
@@ -26,6 +37,12 @@ targets:
         UIUserInterfaceStyle: Dark
         ITSAppUsesNonExemptEncryption: false
         API_BASE_URL: https://companion.jp-engineering.fr
+        # Public RevenueCat SDK key (safe to embed client-side — it's not a
+        # secret, only the backend's webhook secret is). Replace with the
+        # real key from the RevenueCat dashboard (Project settings → API
+        # keys → Apple App Store). Purchases silently no-op against a
+        # placeholder key, so the paywall won't work until this is set.
+        REVENUECAT_API_KEY: appl_REPLACE_ME
         CFBundleURLTypes:
           - CFBundleURLName: com.teslacompanion.oauth
             CFBundleURLSchemes:

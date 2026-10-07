@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var auth: AuthManager
     @EnvironmentObject private var environment: AppEnvironment
+    @EnvironmentObject private var purchases: PurchasesManager
     @State private var showPaywall = false
     @State private var sentryAutoAction: SentryAutoAction = .none
     @State private var schedule: SentrySchedule = .default
@@ -12,16 +13,24 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Abonnement") {
-                    Button {
-                        showPaywall = true
-                    } label: {
+                    if purchases.isPremium {
                         HStack {
-                            Image(systemName: "sparkles").foregroundStyle(AppTheme.Colors.accent)
-                            Text("Passer à Premium")
+                            Image(systemName: "checkmark.seal.fill").foregroundStyle(AppTheme.Colors.success)
+                            Text("Premium actif")
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(AppTheme.Colors.textSecondary)
+                        }
+                    } else {
+                        Button {
+                            showPaywall = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "sparkles").foregroundStyle(AppTheme.Colors.accent)
+                                Text("Passer à Premium")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.Colors.textSecondary)
+                            }
                         }
                     }
                 }
@@ -42,7 +51,11 @@ struct SettingsView: View {
                 } header: {
                     Text("Sentinel")
                 } footer: {
-                    Text("Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée.")
+                    Text(
+                        purchases.isPremium
+                            ? "Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée."
+                            : "Réservée aux abonnés Premium. Déclenchée automatiquement par le serveur dès qu'une activité est détectée, même app fermée."
+                    )
                 }
 
                 Section {
@@ -110,6 +123,7 @@ struct SettingsView: View {
                     sentryAutoAction = settings.sentryAutoAction
                     schedule = settings.sentrySchedule
                 }
+                await purchases.refreshCustomerInfo()
             }
         }
     }
@@ -126,6 +140,14 @@ struct SettingsView: View {
         Binding(
             get: { sentryAutoAction },
             set: { newValue in
+                // Non-"none" actions are Premium-only (enforced server-side
+                // too, see backend/src/routes/settings.ts) — route to the
+                // paywall instead of sending a request that would just be
+                // rejected.
+                guard newValue == .none || purchases.isPremium else {
+                    showPaywall = true
+                    return
+                }
                 sentryAutoAction = newValue
                 Task { try? await environment.settingsService.setSentryAutoAction(newValue) }
             }
